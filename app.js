@@ -107,11 +107,18 @@ async function fetchArtefactsFromSupabase() {
     .from('artefacts').select('*').order('created_at', { ascending: true });
   if (!error) {
     state.artefacts = (data || []).map(item => ({
-      ...item,
-      responsibles: typeof item.responsaveis === "string"
-        ? JSON.parse(item.responsaveis||"[]") : (item.responsaveis||[]),
-      createdAt: item.created_at || item.createdAt
-    }));
+  ...item,
+  responsibles: (() => {
+    if (!item.responsaveis) return [];
+    if (typeof item.responsaveis === "string") {
+      try { return JSON.parse(item.responsaveis); } catch { return []; }
+    }
+    if (Array.isArray(item.responsaveis)) return item.responsaveis;
+    return [];
+  })(),
+  createdAt: item.created_at || item.createdAt
+}));
+
     renderApp();
   } else {
     alert("Erro ao ler artefatos do Supabase: " + error.message);
