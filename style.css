@@ -19,7 +19,12 @@ body {
   font-size: 1.4rem;
   letter-spacing: 1px;
 }
-.search-box { position: relative; width: 300px; margin-right: 10px; }
+.search-box {
+  position: relative;
+  width: 240px;
+  margin-right: 0px;
+  margin-left: 12px;
+}
 .search-box input {
   width: 100%; border: 1px solid #e2e5ea; border-radius: 4px;
   padding: 6px 32px 6px 12px; font-size: 1rem;

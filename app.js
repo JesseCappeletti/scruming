@@ -53,15 +53,19 @@ function formatRich(txt) {
 // ==== HEADER principal ====
 function renderHeader() {
   return `
-    <header class="header">
-      <div class="logo-title"><i class="fa fa-cube" style="color:#2563eb;margin-right:8px"></i> Scrum Info Hub</div>
-      <div style="display:flex; align-items:center; gap:15px;">
-        <div class="search-box">
+    <header class="header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:18px">
+        <div class="logo-title" style="font-weight:bold;font-size:1.55em;">
+          <i class="fa fa-cube" style="color:#2563eb;margin-right:8px"></i> SCRUMING
+        </div>
+        <div class="search-box" style="min-width:260px;">
           <input type="text" placeholder="Buscar por artefato ou usuário..." value="${escapeHtml(state.search)}" 
             oninput="appSearch(this.value)" />
           <i class="fa fa-search"></i>
           ${state.search ? `<button class="search-clear" onclick="clearSearch()">&times;</button>` : ""}
         </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:15px;">
         <div class="sprint-dropdown">
           <select onchange="appChangeSprint(this.value)">
             ${SPRINTS.map((s,i)=>`<option value="${i}"${state.sprintIndex===i?' selected':''}>${escapeHtml(s)}</option>`).join("")}
@@ -80,6 +84,8 @@ function renderHeader() {
     </header>
   `;
 }
+
+
 
 // ==== SUPABASE: PERFIL (PROFILES) ====
 async function loadMeAndProfiles() {
@@ -494,11 +500,15 @@ window.toggleRespOption = function(cb) {
   if (!cb.checked && state.tempResponsaveis.includes(id)) state.tempResponsaveis = state.tempResponsaveis.filter(x=>x!==id);
   renderApp();
 };
-window.showNewArtefactForm = function() {
+window.showNewArtefactForm = async function() {
+  state.loading = true;
+  renderApp();
+  await loadMeAndProfiles();
   state.showNewArtefact = true;
   state.editingArtefact = null;
   state.tempResponsaveis = [];
   state.dropdownResponsaveis = false;
+  state.loading = false;
   renderApp();
 };
 window.closeNewArtefactForm = function(e) {
@@ -509,12 +519,15 @@ window.closeNewArtefactForm = function(e) {
   state.dropdownResponsaveis = false;
   renderApp();
 };
-window.editArtefact = function(id) {
+window.editArtefact = async function(id) {
+  state.loading = true; renderApp();
+  await loadMeAndProfiles();
   const art = state.artefacts.find(a => a.id === id);
-  if (!art) return;
-  state.editingArtefact = {...art}; // não mutar ref!
+  if (!art) { state.loading = false; renderApp(); return; }
+  state.editingArtefact = {...art};
   state.tempResponsaveis = (art.responsibles||[]).map(r=>r.id);
   state.showNewArtefact = true;
+  state.loading = false;
   renderApp();
 };
 window.editArtefactFromModal = function(id) {
