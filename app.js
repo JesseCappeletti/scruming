@@ -50,6 +50,37 @@ function formatRich(txt) {
     .replace(/\/code[\s:]*\n?([\s\S]+)/ig, `<pre>$1</pre>`);
 }
 
+// ==== HEADER principal ====
+function renderHeader() {
+  return `
+    <header class="header">
+      <div class="logo-title"><i class="fa fa-cube" style="color:#2563eb;margin-right:8px"></i> Scrum Info Hub</div>
+      <div style="display:flex; align-items:center; gap:15px;">
+        <div class="search-box">
+          <input type="text" placeholder="Buscar por artefato ou usuário..." value="${escapeHtml(state.search)}" 
+            oninput="appSearch(this.value)" />
+          <i class="fa fa-search"></i>
+          ${state.search ? `<button class="search-clear" onclick="clearSearch()">&times;</button>` : ""}
+        </div>
+        <div class="sprint-dropdown">
+          <select onchange="appChangeSprint(this.value)">
+            ${SPRINTS.map((s,i)=>`<option value="${i}"${state.sprintIndex===i?' selected':''}>${escapeHtml(s)}</option>`).join("")}
+          </select>
+        </div>
+        <button class="header-btn${state.showFavBar?' fav-active':''}" title="Barra de Favoritos" onclick="toggleFavBar()">
+          <i class="fa${state.showFavBar?'s':'r'} fa-star"></i>
+        </button>
+        <div class="user-info">
+          <select onchange="if(this.value==='logout'){logout()}">
+            <option>${escapeHtml(state.user.profile?.name || state.user.email)}</option>
+            <option value="logout">Sair</option>
+          </select>
+        </div>
+      </div>
+    </header>
+  `;
+}
+
 // ==== SUPABASE: PERFIL (PROFILES) ====
 async function loadMeAndProfiles() {
   const { data: { user } } = await supabase.auth.getUser();
@@ -135,10 +166,8 @@ function renderApp() {
     ${state.showModal && state.modalArtefact ? renderArtefactModal(state.modalArtefact) : ""}
     ${state.showNewArtefact ? renderArtefactForm() : ""}
     `;
-
   setTimeout(fixSearchFocus,15);
 }
-// -- Header etc inalterado, está ok --
 
 function renderFavoritesBar() {
   if (!state.favorites.length)
@@ -153,7 +182,7 @@ function renderFavoritesBar() {
       <button class="close-fav-bar" onclick="toggleFavBar()" title="Fechar favoritos">&times;</button>
     </div>`;
 }
-// BOARD ...
+
 function renderBoardOrSearch() {
   if (state.loading) {
     return `<div style="text-align:center; margin:40px;font-size:1.3em;">Carregando...</div>`;
@@ -178,6 +207,7 @@ function renderBoardOrSearch() {
     ).join("")}
   </div>`;
 }
+
 function renderCard(task) {
   return `<div class="card" draggable="true" ondragstart="dragTask(event,'${task.id}')" id="card-${task.id}">
     <div class="card-title" onclick="openArtefactModal('${task.id}')" style="cursor:pointer">${escapeHtml(task.title)}</div>
@@ -199,7 +229,6 @@ function renderCard(task) {
   </div>`;
 }
 
-// RESPONSÁVEIS (PERFIS DE USUÁRIOS SUPABASE)
 function renderResponsaveisSelector() {
   return `<div class="selector-box">
       <button type="button" class="selector-btn${state.dropdownResponsaveis ? ' active' : ''}"
@@ -216,7 +245,6 @@ function renderResponsaveisSelector() {
     </div>`;
 }
 
-// NOVA / EDIÇÃO DE ARTEFATO
 function renderArtefactForm() {
   const editing = !!state.editingArtefact;
   const data = editing ? state.editingArtefact : {};
@@ -256,7 +284,6 @@ function renderArtefactForm() {
   </div>`;
 }
 
-// MODAL: MOSTRAR DETALHE ARTEFATO
 function renderArtefactModal(task) {
   return `<div class="modal-bg" onclick="closeModal(event)">
     <div class="modal-content document-modal" tabindex="0" onclick="event.stopPropagation();" style="width:80%;max-width:900px;margin:0 auto;">
@@ -299,10 +326,57 @@ function renderArtefactModal(task) {
   </div>`;
 }
 
-// ==== LOGIN & REGISTRO ==== 
+// ==== LOGIN & REGISTRO ====
 function renderAuthForms() { return state.showLogin ? renderLoginForm() : renderRegisterForm(); }
-// ... forms inalterado ...
 
+function renderLoginForm() {
+  return `<div style="max-width:420px;margin:50px auto;background:#eef3fa;padding:30px 26px;border-radius:14px;box-shadow:0 8px 38px #2463eb13;">
+    <h2 style="margin-bottom:22px;color:#2563eb"><i class="fa fa-cube"></i> Scrum Info Hub</h2>
+    <form onsubmit="login(event)">
+      <label>Email:</label>
+      <input required name="email" type="email" placeholder="Seu email" style="width:100%"/>
+      <label>Senha:</label>
+      <input required name="password" type="password" placeholder="Senha" style="width:100%"/>
+      <br>
+      <button class="btn" style="width:100%;margin-top:11px;font-size:1.18rem">Entrar</button>
+    </form>
+    <div style="margin:21px 0 3px 0;text-align:center">
+      <span>Ainda não tem cadastro? 
+        <a href="#" onclick="gotoRegister()">Registrar-se</a>
+      </span>
+    </div>
+  </div>`;
+}
+
+function renderRegisterForm() {
+  return `<div style="max-width:460px;margin:50px auto;background:#eef3fa;padding:30px 26px;border-radius:14px;box-shadow:0 8px 38px #2463eb13;">
+    <h2 style="margin-bottom:22px;color:#2563eb"><i class="fa fa-cube"></i> Criar Conta</h2>
+    <form onsubmit="register(event)">
+      <label>Nome:</label>
+      <input required name="name" type="text" placeholder="Seu nome" style="width:100%"/>
+      <label>Email:</label>
+      <input required name="email" type="email" placeholder="Seu email" style="width:100%"/>
+      <label>Senha:</label>
+      <input required name="password" type="password" placeholder="Senha mínima de 6 caracteres" minlength="6" style="width:100%"/>
+      <label>Cargo:</label>
+      <select name="role" required onchange="handleRoleChange(this.value)">
+        <option value="">Selecione...</option>
+        ${ROLES.map(r => `<option value="${r}">${r}</option>`).join("")}
+      </select>
+      <div id="tech-lead-div" style="display:none;margin:7px 0;">
+        <label><input type="checkbox" id="techLeadBox"/> Tech Lead deste time</label>
+      </div>
+      <label>Chave de acesso:</label>
+      <input required name="key" type="text" placeholder="Chave fornecida pelo admin" style="width:100%"/>
+      <br>
+      <button class="btn" style="width:100%;margin-top:11px;font-size:1.13rem">Registrar-se</button>
+      <div style="margin:13px 0 2px 0;text-align:center">
+        <span>Já tem conta? <a href="#" onclick="gotoLogin()">Entrar</a></span>
+      </div>
+      ${state.errorRegister ? `<div style="color:red;text-align:center">${escapeHtml(state.errorRegister)}</div>` : ""}
+    </form>
+  </div>`;
+}
 window.gotoRegister = function () {state.showLogin = false; renderApp();}
 window.gotoLogin = function () {state.showLogin = true; renderApp();}
 window.handleRoleChange = function(role) {
@@ -350,14 +424,12 @@ window.register = async function(ev){
   const role = f.role.value;
   const isTechLead = !!f.querySelector('#techLeadBox')?.checked;
   const key = f.key.value.trim();
-
   if (key!=="97990191") { state.errorRegister="Chave de acesso incorreta"; renderApp(); return; }
   if (!/\S+@\S+\.\S+/.test(email)) { state.errorRegister="Email inválido"; renderApp(); return; }
   if (state.profiles.some(p=>p.role==="Desenvolvedor" && p.is_tech_lead) && isTechLead) {
     state.errorRegister="Só pode ter um Tech Lead";
     renderApp(); return;
   }
-
   state.errorRegister=""; state.loading=true; renderApp();
   let {data,error} = await supabase.auth.signUp({email,password});
   if(error){
@@ -390,9 +462,7 @@ window.createArtefact = async function(ev) {
   const dateVal = form.datareg.value;
   const fileLink = form.fileLink.value.trim();
   let dtFinal = dateVal ? new Date(`${dateVal}T00:00:00`) : new Date();
-
   if (!responsibles.length) return alert("Selecione pelo menos um responsável.");
-
   if (state.editingArtefact) {
     const id = state.editingArtefact.id;
     await updateArtefactOnSupabase(id, {
@@ -412,10 +482,8 @@ window.createArtefact = async function(ev) {
   state.showNewArtefact = false;
   state.tempResponsaveis = [];
   state.dropdownResponsaveis = false;
-
   // <-- CORREÇÃO: aguarde sempre artefatos e re-renderize depois de gravar
   await fetchArtefactsFromSupabase();
-
   renderApp();
 };
 // Dropdown responsáveis helper
