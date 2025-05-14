@@ -1,609 +1,304 @@
-// ==== CONSTANTES & UTILITÁRIOS ====
-const SPRINTS = ["SPRINT I", "SPRINT II", "SPRINT III", "SPRINT IV", "SPRINT V", "SPRINT VI"];
-const ROLES = ["Product Owner", "Scrum Master", "Desenvolvedor"];
-
-function getTechLeadExists(users) {
-  return users.some(u => u.role === "Desenvolvedor" && u.isTechLead);
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #fafafb;
+  min-height: 100vh;
 }
-function getAvatar(name) {
-  return `<span style="background:#2563eb33;border-radius:50%;display:inline-block;width:27px;height:27px;line-height:27px;font-weight:bold;color:#2563eb;text-align:center;margin-right:3px">${(name || "?")[0].toUpperCase()}</span>`;
+* { box-sizing: border-box; }
+
+.header {
+  position: sticky; top: 0; left: 0; right: 0; z-index: 100;
+  background: #f6f8fa;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.logo-title {
+  font-weight: bold;
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+}
+.search-box { position: relative; width: 300px; margin-right: 10px; }
+.search-box input {
+  width: 100%; border: 1px solid #e2e5ea; border-radius: 4px;
+  padding: 6px 32px 6px 12px; font-size: 1rem;
+  background: #fcfdff;
+}
+.search-box i {
+  position: absolute; right: 10px; top: 10px; color: #888;
+}
+.search-clear {
+  position: absolute;
+  right: 32px;
+  top: 7px;
+  border: none;
+  background: none;
+  color: #c3cad1;
+  cursor: pointer;
+  font-size: 1.1em;
+  padding: 0 3px;
+}
+.search-clear:hover { color: #5269fa; }
+.sprint-dropdown, .header-btn, .user-info { margin-left: 15px; }
+.sprint-dropdown select, .user-info select {
+  padding: 6px 12px; border-radius: 4px; border: 1px solid #e2e5ea; font-size: 1rem;
+}
+.header-btn {
+  background: #fff0; border: none; cursor: pointer; font-size: 1.2rem;
+  margin-top: 2px; color: #787878;
+}
+.header-btn.fav-active { color: #fdc60b; }
+
+/* Barra horizontal de favoritos */
+.fav-bar-under {
+  width: 100vw;
+  left: 0; top: 59px; position: sticky; z-index: 99;
+  padding: 14px 35px 14px 24px;
+  background: #fff;
+  box-shadow: 0 4px 14px #2563eb12, 0 1px 4px #2563eb09;
+  border-bottom: 2px solid #f0f4fc;
+  display: flex; gap: 15px; align-items: center; min-height: 44px;
+  transition: all .2s;
+  flex-wrap: wrap;
+}
+.fav-bar-under .fav-title {
+  font-size: 1.1em; font-weight: bold; color:#124075; margin-right: 13px; display:flex;align-items:center;gap:7px;
+}
+.fav-bar-under .fav-item-btn {
+  background: #e8f0fc;
+  border-radius: 7px;
+  box-shadow: 0 1.5px 6px #2563eb0f;
+  border: none;
+  font-size: 1.05rem;
+  color: #204090;
+  padding: 7px 15px;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: background .15s;
+  font-weight: 500;
+}
+.fav-bar-under .fav-item-btn:hover { background: #c3dafc; color: #103076;}
+.fav-bar-under .close-fav-bar {
+  margin-left: auto;
+  background: #ffb0b9;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 1.21rem;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 1px 10px #ed5f7c12;
+  transition: background .18s;
+}
+.fav-bar-under .close-fav-bar:hover { background: #ff4a56;}
+
+.board {
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: 24px 12px 24px 12px; gap: 18px; min-height: 500px;
+}
+.column {
+  background: linear-gradient(132deg,#f5f8ff 80%, #e4eefe 100%);
+  border-radius: 14px;
+  width: 350px; min-height: 420px; box-shadow: 0 3px 14px #2563eb14;
+  display: flex; flex-direction: column; padding: 16px 15px;
+  transition: background .2s;
+  border: 1.7px solid #e7eeff;
+}
+.column-title {
+  font-size: 1.18rem;
+  font-weight: bold;
+  margin-bottom: 14px;
+  color: #124075;
+  letter-spacing: .5px;
+}
+.cards-list { flex: 1 1 0%; }
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #2563eb15;
+  margin-bottom: 13px;
+  padding: 13px 10px 9px 13px;
+  cursor: grab;
+  border-left: 5px solid #2563eb33;
+}
+.card.dragging { opacity: 0.5; }
+.card-title {
+  font-weight: bold;
+  font-size: 1.08rem;
+  color: #194295;
+  margin-bottom: 2px;
+  margin-right: 12px;
+}
+.card-resp {
+  font-size: .94rem;
+  color: #2563eb;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.card-date { font-size: .82rem; color: #888; margin-bottom: 4px; }
+.card-status, .card-pct input { font-size: .97rem; margin-top: 3px; }
+.card-pct input { width: 38px; }
+.card-link-btn {
+  display: inline-block;
+  background: #dcf4ff;
+  color: #116bba;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: .93rem;
+  margin-top: 4px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+.new-artefact-area {
+  background: #e6eefd;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 19px 0 10px 0;
+  display: flex;
+  flex-direction: column;
+}
+input[type="text"], input[type="time"], input[type="date"], textarea {
+  width: 98% !important;
+  min-width: 250px !important;
+  max-width: 100%;
+  font-size: 1.11rem !important;
+  padding: 12px 14px !important;
+  min-height: 24px;
+}
+textarea { min-height: 74px !important; }
+.btn {
+  padding: 11px 21px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.07rem;
+  transition: background .2s;
+}
+.btn:hover {
+  background: #0049b1;
+  color: #fff;
 }
 
-// ==== ESTADO GLOBAL (react-like)  ====
-const state = {
-  user: null,
-  users: [],
-  artefacts: [],
-  sprintIndex: 0,
-  showModal: false,
-  modalArtefact: null,
-  search: "",
-  showFavBar: false,
-  favorites: [],
-  editingArtefact: null,
-  showLogin: true,
-  dropdownResponsaveis: false,
-  tempResponsaveis: [],
-  showNewArtefact: false
-};
+/* Dropdown seleção múltipla responsáveis */
+.selector-box { position: relative; width: 97% !important; margin-bottom: 14px;}
+.selector-btn { display: flex; align-items: center; min-height: 44px; background: #fbfcfe; border: 1.6px solid #b5cbef; border-radius: 6px; width: 100%; padding: 9px 10px; font-size: 1.10rem; cursor: pointer; text-align:left; transition: border .2s;}
+.selector-btn:focus, .selector-btn.active { border: 2px solid #2563eb; box-shadow: 0 0 0 3px #2563eb25; outline: none;}
+.selector-list { position: absolute; left: 0; top: 110%; background: #fff; border: 1.4px solid #b5cbef; box-shadow: 0 4px 18px #2563eb22; border-radius: 8px; width: 99%; z-index: 13; max-height: 240px; overflow-y: auto; padding: 7px 0; animation: fadeIn .2s;}
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1; transform:none;} }
+.selector-list label { cursor: pointer; display: flex; align-items: center; padding: 7px 19px 7px 13px; font-size: 1.07rem;}
+.selector-list label:hover { background: #e9f4ff;}
+.selector-list input[type=checkbox] { margin-right: 10px;}
+.selector-tags { display: inline-flex; gap: 7px; flex-wrap: wrap;}
+.selector-tag { background: #dadfff; border-radius: 4px; font-size: .98rem; padding: 2px 7px; color: #1349bd; margin: 1px 2px; border: 1px solid #c3cfff;}
 
-// Sincronização com localStorage
-if (localStorage.getItem("s_apptemp2")) {
-  Object.assign(state, JSON.parse(localStorage.getItem("s_apptemp2")));
+/* MODAL */
+.modal-bg {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: #242a3633 !important;
+  z-index: 150;
+  display: flex; justify-content: center; align-items: center;
 }
-function saveState() {
-  localStorage.setItem("s_apptemp2", JSON.stringify({
-    user: state.user,
-    users: state.users,
-    artefacts: state.artefacts,
-    sprintIndex: state.sprintIndex,
-    favorites: state.favorites,
-  }));
+.modal-content {
+  background: #fff !important;
+  border-radius: 15px !important;
+  box-shadow: 0 10px 40px #2563eb33, 0 1.5px 7px #0002;
+  padding: 38px 34px 25px 34px !important;
+  min-width: 430px;
+  width: 80vw !important;
+  max-width: 900px !important;
+  max-height: 89vh;
+  overflow-y: auto;
+  position: relative;
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid #e0e8f7;
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  min-height: 43px;
+}
+.modal-header b {
+  font-size: 1.3rem;
+  color: #1550b1;
+  letter-spacing: .2px;
+}
+.modal-close {
+  border-radius: 50%;
+  border: none;
+  width: 36px;
+  height: 36px;
+  background: #e5e8ee;
+  color: #5282df;
+  font-size: 1.3rem;
+  transition: background .2s, color .2s;
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  z-index: 20;
+}
+.modal-close:hover {
+  background: #2563eb;
+  color: #fff;
+}
+.modal-content label {
+  display: block; font-weight: 600; color: #123074; margin-bottom: 4px; margin-top: 15px;
+}
+.modal-content textarea { min-height: 74px !important; }
+
+/* Modal documento/artefato */
+.document-modal {
+  min-width: 630px !important;
+  width: 80vw !important;
+  max-width: 900px !important;
+  padding: 42px 52px 30px 52px !important;
+  font-family: Arial, sans-serif;
+  background: #fff !important;
+  max-height: 92vh;
+  overflow-y: auto;
+  position: relative;
+}
+.document-header h2 {
+  font-size: 2rem;
+  color: #174883;
+  margin: 0 0 12px 0;
+  border-bottom: 2px solid #eaf1fb;
+  padding-bottom: 10px;
+  letter-spacing: 0.2px;
+}
+.document-section {
+  margin-bottom: 23px;
+  padding-bottom: 12px;
+  font-size: 1.12rem;
+  border-bottom: 1px solid #edf2f9;
+}
+.document-section:last-child { border-bottom: none; }
+.document-section strong { color: #1550b1;}
+.document-actions { display: flex; gap: 14px; align-items: center; margin-top: 8px;}
+.document-actions .btn {
+  margin-top: 0 !important;
+  padding: 10px 18px;
+  font-size: 1rem;
 }
 
-// ==== RENDER ROOT ====
-function renderApp() {
-  document.getElementById("app").innerHTML = `
-    ${state.user ? renderHeader() : ""}
-    ${state.user && state.showFavBar ? renderFavoritesBarUnderHeader() : ""}
-    <main>
-      ${state.user ? renderBoard() : renderLoginOrRegister()}
-    </main>
-    ${state.showModal && state.modalArtefact ? renderModal(state.modalArtefact) : ""}
-  `;
-  setTimeout(fixSearchFocus, 20);
+/* Responsividade */
+@media (max-width: 1100px) {
+  .board { flex-direction: column; align-items: stretch; }
+  .column { width: 98vw; max-width: 98vw; min-height: unset; }
 }
-
-// ==== HEADER ====
-function renderHeader() {
-  return `<div class="header">
-    <span class="logo-title">Scrum Info Hub</span>
-    <div style="display:flex;align-items:center;flex:1;margin-left:22px;position:relative;">
-      <div class="search-box" style="margin-right:0;">
-        <input
-          placeholder="Pesquisar (usuários, artefatos, sprint, data)..."
-          value="${escapeHtml(state.search || "")}"
-          oninput="appSearch(this.value)" autocomplete="off"/>
-        <i class="fas fa-search"></i>
-        ${state.search ? `<button class="search-clear" onclick="clearSearch()" title="Limpar"><i class="fa fa-times"></i></button>` : ""}
-      </div>
-      <div class="sprint-dropdown">
-        <select onchange="appChangeSprint(this.value)">
-        ${SPRINTS.map((s, i) => `<option value="${i}" ${i === state.sprintIndex ? "selected" : ""}>${s}</option>`).join("")}
-        </select>
-      </div>
-      <button class="header-btn ${state.showFavBar ? "fav-active" : ""}" onclick="toggleFavBar()" title="Favoritos"><i class="fa fa-star"></i></button>
-    </div>
-    <div class="user-info">
-      <span title="${state.user.role}${state.user.isTechLead ? " (Tech Lead)" : ""}">${getAvatar(state.user.username)}${escapeHtml(state.user.username)}</span>
-      <button class="header-btn" onclick="logout()" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
-    </div>
-  </div>`;
-}
-
-// ==== FAVORITOS =====
-function renderFavoritesBarUnderHeader() {
-  if (!state.favorites.length)
-    return `<div class="fav-bar-under"><span class="fav-title"><i class="fa fa-star"></i> Favoritos</span><i>Nenhum favorito ainda</i> <button class="close-fav-bar" onclick="toggleFavBar()">&times;</button></div>`;
-  return `<div class="fav-bar-under">
-      <span class="fav-title"><i class="fa fa-star"></i> Favoritos</span>
-      ${state.favorites.map(id => {
-        const art = state.artefacts.find(a => a.id === id);
-        if (!art) return "";
-        return `<button class="fav-item-btn" onclick="favOpenArtefact('${id}')">${escapeHtml(art.title)}</button>`;
-      }).join("")}
-      <button class="close-fav-bar" onclick="toggleFavBar()" title="Fechar favoritos">&times;</button>
-    </div>`;
-}
-
-// ==== SEARCH/SPRINT HANDLERS ====
-window.appSearch = function (val) {
-  state.search = val;
-  state._shouldFocusSearch = true;
-  renderApp();
-};
-window.clearSearch = function () {
-  state.search = "";
-  renderApp();
-};
-function fixSearchFocus() {
-  const search = document.querySelector(".search-box input");
-  if (search) {
-    const prev = search.value;
-    if (document.activeElement === search) return;
-    if (state._shouldFocusSearch) {
-      search.focus();
-      search.setSelectionRange(prev.length, prev.length);
-      state._shouldFocusSearch = false;
-    }
+@media (max-width: 900px) {
+  .modal-content, .document-modal {
+    min-width: unset !important;
+    width: 99vw !important;
+    max-width: 99vw !important;
+    padding: 17px 2vw 14px 2vw !important;
   }
 }
-window.toggleFavBar = function () {
-  state.showFavBar = !state.showFavBar;
-  renderApp();
-};
-window.favOpenArtefact = function (id) {
-  state.showModal = true;
-  state.modalArtefact = state.artefacts.find(a => a.id === id);
-  renderApp();
-};
-function appChangeSprint(idxStr) {
-  state.sprintIndex = parseInt(idxStr, 10);
-  state.search = "";
-  state.showNewArtefact = false;
-  renderApp();
+@media (max-width: 600px) {
+  .header { flex-direction: column; align-items: stretch; padding: 11px; gap: 12px; }
+  .fav-bar-under { padding:7px 4vw; }
 }
-window.appChangeSprint = appChangeSprint;
-
-// ==== BOARD & COLUNAS ====
-function renderBoard() {
-  if (state.search && state.search.trim().length) {
-    return renderSearchResults();
-  }
-  const sprint = SPRINTS[state.sprintIndex];
-  const tasks = state.artefacts.filter(a => a.sprint === sprint);
-  const columns = [
-    { key: "todo", label: "A FAZER", filter: t => t.status === "todo" },
-    { key: "progress", label: "EM ANDAMENTO", filter: t => t.status === "progress" },
-    { key: "done", label: "CONCLUÍDO", filter: t => t.status === "done" },
-  ];
-  return `<div class="board">
-    ${columns.map(col =>
-      `<div class="column" ondragover="allowDrop(event)" ondrop="dropTask(event,'${col.key}')">
-        <div class="column-title">${col.label}</div>
-        <div class="cards-list">
-        ${tasks.filter(col.filter).map(task => renderCard(task)).join("")}
-        </div>
-        ${col.key === "todo" ? `<button class="btn" onclick="showNewArtefactForm()">+ Novo Artefato/Tarefa</button>` : ""}
-      </div>`
-    ).join("")}
-  </div>
-  ${state.showNewArtefact ? renderNewArtefactForm() : ""}
-  `;
-}
-
-function renderCard(task) {
-  return `<div class="card" draggable="true" ondragstart="dragTask(event,'${task.id}')" id="card-${task.id}">
-    <div class="card-title" onclick="openArtefactModal('${task.id}')" style="cursor:pointer">${escapeHtml(task.title)}</div>
-    <div class="card-resp">Por: ${escapeHtml(task.responsibles.map(r => r.username).join(", "))}</div>
-    <div class="card-date">${escapeHtml(formatDate(task.createdAt))}</div>
-    ${task.status === "progress" ? `
-      <div class="card-pct">
-        <label>Concluído: <input type="number" min="0" max="100" value="${task.pct || 0}" style="width:40px" onchange="updatePct('${task.id}',this.value)" />%</label>
-      </div>
-    ` : ""}
-    ${task.status === "done" ? `
-      <button class="card-link-btn" onclick="openArtefactModal('${task.id}')">Ver Artefato</button>
-    ` : ""}
-    <div style="margin-top:7px">
-      <button class="card-link-btn" onclick="toggleFavorite('${task.id}')"><i class="fa${(state.favorites || []).includes(task.id) ? 's' : 'r'} fa-star"></i> Favorito</button>
-      <button class="card-link-btn" style="background:#f9ba3399" onclick="editArtefact('${task.id}')"><i class="fa fa-edit"></i> Editar</button>
-      <button class="card-link-btn" style="background:#ffacb199" onclick="deleteArtefact('${task.id}')"><i class="fa fa-trash"></i> Excluir</button>
-    </div>
-  </div>`;
-}
-
-/* ========== NOVA/EDITAR ARTEFATO (MODAL) ========== */
-function renderNewArtefactForm() {
-  const data = state.editingArtefact || {};
-  if (!state.tempResponsaveis || !Array.isArray(state.tempResponsaveis)) state.tempResponsaveis = [];
-  if (state.editingArtefact && state.tempResponsaveis.length === 0 && data.responsibles) {
-    state.tempResponsaveis = data.responsibles.map(x => x.username);
-  }
-  let dt = data.createdAt ? new Date(data.createdAt) : new Date();
-  let dataVal = dt.toISOString().slice(0, 10);
-  return `<div class="modal-bg" onclick="closeNewArtefactForm(event)">
-    <div class="modal-content" tabindex="0" onclick="event.stopPropagation();" style="width:80%;max-width:900px;margin:0 auto;">
-      <button class="modal-close" onclick="closeNewArtefactForm()">&times;</button>
-      <div class="modal-header"><b>${state.editingArtefact ? "Editar Artefato / Tarefa" : "Novo Artefato / Tarefa"}</b></div>
-      <form onsubmit="createArtefact(event)">
-        <label>Título:</label>
-        <input required type="text" name="title" placeholder="Título (ex: Design UI da HomePage)" value="${escapeHtml(data.title || "")}" />
-        <label>Responsáveis:</label>
-        <div class="selector-box">
-          <button type="button" class="selector-btn${state.dropdownResponsaveis ? ' active' : ''}"
-            onclick="toggleDropdownResp()">${state.tempResponsaveis.length ? '<span class="selector-tags">' + state.tempResponsaveis.map(u =>
-              `<span class="selector-tag">${escapeHtml(u)}</span>`
-            ).join('') + '</span>' : 'Selecione responsáveis'} <i class="fa fa-caret-down" style="margin-left:auto"></i>
-          </button>
-          ${state.dropdownResponsaveis ? `<div class="selector-list">${state.users.map(u => {
-            const checked = state.tempResponsaveis.includes(u.username) ? 'checked' : '';
-            return `<label><input type="checkbox" value="${u.username}" onchange="toggleRespOption(this)" ${checked}/> ${escapeHtml(u.username)} (${u.role}${u.isTechLead ? " - Tech Lead" : ""}) </label>`;
-          }).join('')}</div>` : ''}
-        </div>
-        <label>Justificativa (responsável):</label>
-        <textarea required name="responsibleJustif" placeholder="Por que estes responsáveis?">${escapeHtml(data.responsibleJustif || "")}</textarea>
-        <label>Sprint:</label>
-        <select name="sprint" required>
-          ${SPRINTS.map((s, i) => `<option value="${s}" ${((data.sprint && data.sprint === s) || (!data.sprint && i === state.sprintIndex)) ? "selected" : ""}>${s}</option>`).join("")}
-        </select>
-        <label>Ferramenta:</label>
-        <input name="tool" type="text" placeholder="Ferramenta (Ex: Figma, Word,...)" required value="${escapeHtml(data.tool || "")}" />
-        <label>Justificativa (ferramenta):</label>
-        <textarea name="toolJustif" placeholder="Por que esta ferramenta?" required>${escapeHtml(data.toolJustif || "")}</textarea>
-        <label>Descrição do Artefato</label>
-        <textarea name="description" placeholder="Descrição detalhada do artefato (suporta /código, negrito, links, etc)">${escapeHtml(data.description || "")}</textarea>
-        <label style="margin-top:21px;">Data:</label>
-        <input name="datareg" type="date" value="${dataVal}" required style="max-width:200px;display:inline-block;" />
-        <div style="margin-bottom:16px; margin-top:17px;">
-          <label><i class="fa fa-link"></i> Link do Arquivo:</label>
-          <input type="url" name="fileLink" placeholder="Cole o link para o arquivo" value="${escapeHtml(data.fileLink||'')}" />
-        </div>
-        <button class="btn" type="submit" style="margin-top:25px">${state.editingArtefact ? "Salvar" : "Criar"}</button>
-        ${state.editingArtefact ? `<button class="btn" type="button" style="background:#ea4444;" onclick="deleteArtefact('${data.id}')">Excluir</button>` : ""}
-      </form>
-    </div>
-  </div>`;
-}
-window.toggleDropdownResp = function () {
-  state.dropdownResponsaveis = !state.dropdownResponsaveis;
-  renderApp();
-};
-window.toggleRespOption = function (input) {
-  const val = input.value;
-  if (input.checked) {
-    if (!state.tempResponsaveis.includes(val))
-      state.tempResponsaveis.push(val);
-  } else {
-    state.tempResponsaveis = state.tempResponsaveis.filter(x => x !== val);
-  }
-  renderApp();
-};
-// Fecha dropdown se clicar fora
-document.body.addEventListener("mousedown", function (e) {
-  if (state.dropdownResponsaveis && !e.target.closest('.selector-btn,.selector-list'))
-    { state.dropdownResponsaveis = false; renderApp(); }
-});
-window.showNewArtefactForm = function () {
-  state.showNewArtefact = true;
-  state.editingArtefact = null;
-  state.tempResponsaveis = [];
-  state.dropdownResponsaveis = false;
-  state.search = ""; // LIMPA busca ao criar novo
-  renderApp();
-};
-window.closeNewArtefactForm = function (e) {
-  if (e) e.stopPropagation();
-  state.showNewArtefact = false;
-  state.editingArtefact = null;
-  state.tempResponsaveis = [];
-  state.dropdownResponsaveis = false;
-  renderApp();
-};
-window.createArtefact = function (ev) {
-  ev.preventDefault();
-  const form = ev.target;
-  const title = form.title.value.trim();
-  const responsibles = state.users.filter(u => state.tempResponsaveis.includes(u.username));
-  const responsibleJustif = form.responsibleJustif.value.trim();
-  const sprint = form.sprint.value;
-  const tool = form.tool.value.trim();
-  const toolJustif = form.toolJustif.value.trim();
-  const description = form.description.value;
-  const dateVal = form.datareg.value;
-  const fileLink = form.fileLink.value.trim();
-  let dtFinal = dateVal ? new Date(`${dateVal}T00:00:00`) : new Date();
-  if (!responsibles.length) return alert("Selecione pelo menos um responsável.");
-  let artefact;
-  if (state.editingArtefact) {
-    Object.assign(state.editingArtefact, {
-      title, responsibles, responsibleJustif, sprint, tool, toolJustif, description,
-      createdAt: dtFinal,
-      fileLink
-    });
-    artefact = state.editingArtefact;
-    state.editingArtefact = null;
-  } else {
-    artefact = {
-      id: "art-" + Math.random().toString(16).slice(2),
-      title, responsibles, responsibleJustif, sprint, tool, toolJustif, description,
-      createdAt: dtFinal,
-      status: "todo",
-      pct: 0,
-      fileLink
-    };
-    state.artefacts.push(artefact);
-  }
-  state.showNewArtefact = false;
-  state.tempResponsaveis = [];
-  state.dropdownResponsaveis = false;
-  state.sprintIndex = SPRINTS.indexOf(artefact.sprint);
-  saveState();
-  renderApp();
-};
-window.editArtefact = function (id) {
-  const art = state.artefacts.find(a => a.id === id);
-  if (!art) return;
-  state.editingArtefact = art;
-  state.showNewArtefact = true;
-  state.tempResponsaveis = art.responsibles.map(r => r.username);
-  state.sprintIndex = SPRINTS.indexOf(art.sprint);
-  state.search = ""; // LIMPA busca ao editar
-  renderApp();
-};
-window.deleteArtefact = function (id) {
-  if (!confirm("Tem certeza que deseja excluir este artefato?")) return;
-  state.artefacts = state.artefacts.filter(a => a.id !== id);
-  state.showModal = false;
-  state.showNewArtefact = false;
-  state.editingArtefact = null;
-  saveState();
-  renderApp();
-};
-
-/* ========== MODAL DE DETALHES DO ARTEFATO ========== */
-function renderModal(task) {
-  return `<div class="modal-bg" onclick="closeModal(event)">
-    <div class="modal-content document-modal" tabindex="0" onclick="event.stopPropagation();" style="width:80%;max-width:900px;margin:0 auto;">
-      <button class="modal-close" onclick="closeModal()" title="Fechar">&times;</button>
-      <div class="document-header">
-        <h2>${escapeHtml(task.title)}</h2>
-      </div>
-      <div class="document-section">
-        <strong>Responsável:</strong>
-        <span>${escapeHtml(task.responsibles.map(r => r.username).join(", "))}</span>
-      </div>
-      <div class="document-section">
-        <strong>Justificativa (responsável):</strong><br>
-        <span>${escapeHtml(task.responsibleJustif || "")}</span>
-      </div>
-      <div class="document-section">
-        <strong>Sprint:</strong> <span>${escapeHtml(task.sprint)}</span>
-        <span style="margin-left:32px"><strong>Data:</strong> ${escapeHtml(formatDate(task.createdAt, false))}</span>
-      </div>
-      <div class="document-section">
-        <strong>Ferramenta:</strong> <span>${escapeHtml(task.tool || "")}</span><br>
-        <strong>Justificativa (ferramenta):</strong> <span>${escapeHtml(task.toolJustif || "")}</span>
-      </div>
-      <div class="document-section">
-        <strong>Descrição:</strong><br>
-        <span>${formatRich(task.description)}</span>
-      </div>
-      ${task.fileLink ? `<div class="document-section">
-        <strong>Link do Arquivo:</strong><br/>
-        <a href="${escapeHtml(task.fileLink)}" target="_blank">${escapeHtml(task.fileLink)}</a>
-      </div>` : ""}
-      <div class="document-actions">
-        <button class="btn" onclick="toggleFavorite('${task.id}')">
-          <i class="fa${(state.favorites || []).includes(task.id) ? 's' : 'r'} fa-star"></i> Favoritar
-        </button>
-        <button class="btn" onclick="editArtefactFromModal('${task.id}')" style="background:#f9ba33;">Editar</button>
-        <button class="btn" onclick="deleteArtefact('${task.id}')" style="background:#ea4444;">Excluir</button>
-      </div>
-    </div>
-  </div>`;
-}
-window.openArtefactModal = function (id) {
-  state.showModal = true;
-  state.modalArtefact = state.artefacts.find(a => a.id === id);
-  renderApp();
-};
-window.closeModal = function (e) {
-  state.showModal = false;
-  state.modalArtefact = null;
-  renderApp();
-};
-window.editArtefactFromModal = function (id) {
-  state.showModal = false;
-  setTimeout(function () {
-    state.editingArtefact = state.artefacts.find(a => a.id === id);
-    state.showNewArtefact = true;
-    state.tempResponsaveis = state.editingArtefact.responsibles.map(r => r.username);
-    state.sprintIndex = SPRINTS.indexOf(state.editingArtefact.sprint);
-    state.search = ""; // LIMPA busca ao editar
-    renderApp();
-  }, 40);
-};
-
-/* ======= DRAG & DROP ======= */
-window.dragTask = function (e, id) {
-  e.dataTransfer.setData("text", id);
-  setTimeout(() => e.target.classList.add("dragging"), 1);
-};
-window.allowDrop = function (e) {
-  e.preventDefault();
-};
-window.dropTask = function (e, status) {
-  e.preventDefault();
-  const id = e.dataTransfer.getData("text");
-  const task = state.artefacts.find(a => a.id === id);
-  if (task && ["todo", "progress", "done"].includes(status)) {
-    task.status = status;
-    if (status !== "progress") task.pct = 0;
-    saveState();
-    renderApp();
-  }
-};
-window.updatePct = function (id, val) {
-  const artefact = state.artefacts.find(a => a.id === id);
-  if (!artefact) return;
-  artefact.pct = Math.min(100, Math.max(0, parseInt(val, 10) || 0));
-  saveState();
-  renderApp();
-};
-window.toggleFavorite = function (id) {
-  if (!state.favorites) state.favorites = [];
-  if (state.favorites.includes(id)) state.favorites = state.favorites.filter(f => f !== id);
-  else state.favorites.push(id);
-  saveState();
-  renderApp();
-};
-
-/* ======= LOGIN | REGISTRO ======= */
-function renderLoginOrRegister() {
-  return state.showLogin ? renderLoginForm() : renderRegisterForm();
-}
-function renderLoginForm() {
-  return `
-  <div style="max-width:390px;margin:70px auto 0 auto;background:#f1f6fa;border-radius:13px;box-shadow:0 8px 40px #0049b122;padding:33px 26px;">
-    <h2 style="text-align:center;">Entrar</h2>
-    <form onsubmit="login(event)">
-      <input name="username" required placeholder="Nome completo" style="width:100%;margin-bottom:13px"/>
-      <input name="password" type="password" required placeholder="Senha" style="width:100%;margin-bottom:13px"/>
-      <button class="btn" type="submit" style="width:100%;margin:13px 0 0 0">Entrar</button>
-      <div style="margin-top:23px; text-align:center;">
-        <span style="font-size:1.01em;">Novo por aqui? <a href="#" onclick="gotoRegister()">Quero me registrar</a></span>
-      </div>
-    </form>
-  </div>
-  `;
-}
-function renderRegisterForm() {
-  return `
-  <div style="max-width:430px;margin:55px auto 0 auto;background:#f1f6fa;border-radius:13px;box-shadow:0 8px 40px #0049b122;padding:33px 28px;">
-    <h2 style="text-align:center;">Registrar</h2>
-    <form onsubmit="register(event)">
-      <input name="username" required placeholder="Nome completo" style="width:100%;margin-bottom:13px"/>
-      <input name="password" type="password" required placeholder="Senha" style="width:100%;margin-bottom:13px"/>
-      <input name="key" placeholder="Chave de acesso" required minlength="8" maxlength="8" style="width:100%;margin-bottom:13px"/>
-      <label>Cargo:<br>
-        <select name="role" required onchange="handleRoleChange(this.value)">
-          <option value="">Escolha seu cargo</option>
-          ${ROLES.map(r => `<option value="${r}">${r}</option>`).join("")}
-        </select>
-      </label>
-      <div id="tech-lead-div" style="display:none;margin-bottom:10px">
-        <label>
-          <input type="checkbox" id="techLeadBox"/> Sou Tech Lead
-        </label>
-      </div>
-      <button class="btn" type="submit" style="width:100%;margin-top:15px;">Registrar</button>
-      <div style="margin-top:19px; text-align:center;">
-        <span style="font-size:1.01em;"><a href="#" onclick="gotoLogin()">Já tem conta? Entrar</a></span>
-      </div>
-    </form>
-  </div>
-  `;
-}
-window.gotoRegister = function () {
-  state.showLogin = false;
-  renderApp();
-};
-window.gotoLogin = function () {
-  state.showLogin = true;
-  renderApp();
-};
-window.register = function (ev) {
-  ev.preventDefault();
-  const f = ev.target;
-  const username = f.username.value.trim();
-  const password = f.password.value;
-  const key = f.key.value.trim();
-  const role = f.role.value;
-  let isTechLead = !!f.querySelector('#techLeadBox')?.checked;
-  if (key !== "97990191") return alert("Chave de acesso inválida!");
-  if (state.users.some(u => u.username === username)) {
-    return alert("Já existe usuário com esse nome completo! Faça login.");
-  }
-  if (!username || !role) return alert("Preencha todos os campos! Cargo é obrigatório.");
-  if (role === "Desenvolvedor") {
-    if (getTechLeadExists(state.users) && isTechLead) {
-      alert("Só pode haver um Tech Lead.");
-      isTechLead = false;
-    }
-  }
-  state.users.push({ username, password, role, isTechLead });
-  saveState();
-  alert("Registrado com sucesso! Agora entre.");
-  state.showLogin = true;
-  renderApp();
-};
-window.login = function (ev) {
-  ev.preventDefault();
-  const f = ev.target;
-  const username = f.username.value.trim();
-  const password = f.password.value;
-  const u = state.users.find(u => u.username === username && u.password === password);
-  if (!u) return alert("Usuário ou senha incorretos!");
-  state.user = { ...u };
-  saveState();
-  renderApp();
-};
-window.logout = function () {
-  state.user = null;
-  state.search = "";
-  saveState();
-  renderApp();
-};
-window.handleRoleChange = function (role) {
-  const techDiv = document.getElementById("tech-lead-div");
-  if (!techDiv) return;
-  if (role === "Desenvolvedor") {
-    if (getTechLeadExists(state.users)) {
-      techDiv.style.display = "none";
-    } else {
-      techDiv.style.display = "block";
-    }
-  } else {
-    techDiv.style.display = "none";
-  }
-};
-
-/* ======= PESQUISA ======= */
-function renderSearchResults() {
-  const q = (state.search || "").trim().toLowerCase();
-  if (!q) return "";
-  let html = `<div style="max-width:700px;margin:30px auto 0 auto;background:#f4f6fc;border-radius:12px;padding:18px;">
-    <b>Pesquisa:</b> <i>${escapeHtml(state.search)}</i>
-    <button onclick="clearSearch()" style="float:right;background:none;border:none;color:#f33;font-size:18px;" title="Limpar busca">&times;</button>
-    <br><br>`;
-  let users = state.users.filter(u => u.username.toLowerCase().includes(q));
-  if (users.length) {
-    html += `<div><b>Usuários encontrados:</b><br>`;
-    users.forEach(u => {
-      html += `<div class="card-resp">${getAvatar(u.username)}${escapeHtml(u.username)} — ${escapeHtml(u.role)}${u.isTechLead ? " (Tech Lead)" : ""}
-        <br><i>Artefatos:</i> ${state.artefacts.filter(a => a.responsibles.some(r => r.username === u.username)).map(a => `<a href="#" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</a>`).join(", ") || "[Nenhum]"}</div><hr>`;
-    });
-    html += `</div>`;
-  }
-  let arts = state.artefacts.filter(a => a.title.toLowerCase().includes(q));
-  if (arts.length) {
-    html += `<div><b>Artefatos encontrados:</b><br>`;
-    arts.forEach(a => {
-      html += `<div><span class="card-title">${escapeHtml(a.title)}</span> — <b>${escapeHtml(a.sprint)}</b> — <a href="#" onclick="openArtefactModal('${a.id}')">[Detalhes]</a></div>`;
-    });
-    html += `</div>`;
-  }
-  let bydate = state.artefacts.filter(a => a.createdAt && formatDate(a.createdAt, false).includes(q));
-  if (bydate.length) {
-    html += `<div><b>Por data:</b><br>${bydate.map(a => `<div>${formatDate(a.createdAt, false)} <a href="#" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</a></div>`).join("")}</div>`;
-  }
-  let bysprint = state.artefacts.filter(a => a.sprint.toLowerCase().includes(q));
-  if (bysprint.length) {
-    html += `<div><b>Sprint:</b> ${escapeHtml(q.toUpperCase())}<br>${bysprint.map(a => `<span class="card-link-btn" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</span>`).join(" ")}</div>`;
-  }
-  if (!users.length && !arts.length && !bydate.length && !bysprint.length)
-    html += `<i>Nenhum resultado encontrado.</i>`;
-  html += `</div>`;
-  return html;
-}
-
-/* ========== UTILS ========== */
-function escapeHtml(str) {
-  if (!str) return "";
-  return str.replace(/[&<>'"]/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-  }[c]));
-}
-function formatDate(dt, includeTime = true) {
-  if (!dt) return "";
-  const d = new Date(dt);
-  const dateString = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-  return dateString;
-}
-function formatRich(txt) {
-  if (!txt) return "";
-  return escapeHtml(txt)
-    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
-    .replace(/__(.+?)__/g, '<u>$1</u>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/\[(.+?)\]\((https?:\/\/[^\s]+)\)/g, `<a href="$2" target="_blank">$1</a>`)
-    .replace(/(https?:\/\/[^\s]+)/g, `<a href="$1" target="_blank">$1</a>`)
-    .replace(/\/code[\s:]*\n?([\s\S]+)/ig, `<pre>$1</pre>`);
-}
-
-renderApp();
