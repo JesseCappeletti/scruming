@@ -8,6 +8,31 @@ function getTechLeadExists(users) {
 function getAvatar(name) {
   return `<span style="background:#2563eb33;border-radius:50%;display:inline-block;width:27px;height:27px;line-height:27px;font-weight:bold;color:#2563eb;text-align:center;margin-right:3px">${(name || "?")[0].toUpperCase()}</span>`;
 }
+function formatDate(dt, short = true) {
+  if (!dt) return "";
+  if (typeof dt === "string" || typeof dt === "number") dt = new Date(dt);
+  if (short) return dt.toLocaleDateString("pt-BR");
+  return dt.toLocaleDateString("pt-BR") + " " + dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+function escapeHtml(str) {
+  if (!str) return "";
+  return (str + "")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+function formatRich(str) {
+  if (!str) return "";
+  return (str + "")
+    // bold
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    // code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // links
+    .replace(/\b((https?:\/\/[^\s'"]+))/g, '<a href="$1" target="_blank">$1</a>')
+    .replace(/\n/g, "<br>");
+}
 
 // ==== ESTADO GLOBAL (react-like)  ====
 const state = {
@@ -180,6 +205,42 @@ function renderCard(task) {
       <button class="card-link-btn" style="background:#f9ba3399" onclick="editArtefact('${task.id}')"><i class="fa fa-edit"></i> Editar</button>
       <button class="card-link-btn" style="background:#ffacb199" onclick="deleteArtefact('${task.id}')"><i class="fa fa-trash"></i> Excluir</button>
     </div>
+  </div>`;
+}
+
+function renderSearchResults() {
+  const query = state.search.trim().toLowerCase();
+  const artefacts = state.artefacts.filter(a =>
+    a.title?.toLowerCase().includes(query) ||
+    a.sprint?.toLowerCase().includes(query) ||
+    a.tool?.toLowerCase().includes(query) ||
+    a.responsibles?.some(r => r.username?.toLowerCase().includes(query)) ||
+    formatDate(a.createdAt).includes(query)
+  );
+  const users = state.users.filter(u =>
+    u.username.toLowerCase().includes(query) ||
+    (u.role && u.role.toLowerCase().includes(query))
+  );
+  return `<div style="padding:40px 20px;">
+    <h3>Resultados da busca:</h3>
+    ${users.length ? `<div class="result-users">
+      <h4>Usuários</h4>
+      ${users.map(u => `<div class="user-result">${getAvatar(u.username)} <b>${escapeHtml(u.username)}</b> <span style="color:#257">${escapeHtml(u.role || "")}${u.isTechLead ? " (Tech Lead)" : ""}</span></div>`).join("")}
+    </div>` : ""}
+    ${artefacts.length ? `<div class="result-artefacts">
+      <h4>Artefatos / Tarefas</h4>
+      ${artefacts.map(a =>
+        `<div class="art-result" onclick="openArtefactModal('${a.id}')">
+            <div class="res-title">${escapeHtml(a.title)}</div>
+            <div class="res-meta">
+              <span>${escapeHtml(a.sprint)}</span> |
+              <span>${escapeHtml(formatDate(a.createdAt, false))}</span> |
+              <span>${escapeHtml(a.responsibles.map(r => r.username).join(", "))}</span>
+            </div>
+        </div>`
+      ).join("")}
+    </div>` : ""}
+    ${!users.length && !artefacts.length ? `<div>Nenhum resultado encontrado.</div>` : ""}
   </div>`;
 }
 
@@ -438,7 +499,7 @@ function renderLoginForm() {
   <div style="max-width:390px;margin:70px auto 0 auto;background:#f1f6fa;border-radius:13px;box-shadow:0 8px 40px #0049b122;padding:33px 26px;">
     <h2 style="text-align:center;">Entrar</h2>
     <form onsubmit="login(event)">
-      <input name="username" required placeholder="Nome completo" style="width:100%;margin-bottom:13px"/>
+      <input name="username" required placeholder="Seu email" style="width:100%;margin-bottom:13px"/>
       <input name="password" type="password" required placeholder="Senha" style="width:100%;margin-bottom:13px"/>
       <button class="btn" type="submit" style="width:100%;margin:13px 0 0 0">Entrar</button>
       <div style="margin-top:23px; text-align:center;">
@@ -453,7 +514,7 @@ function renderRegisterForm() {
   <div style="max-width:430px;margin:55px auto 0 auto;background:#f1f6fa;border-radius:13px;box-shadow:0 8px 40px #0049b122;padding:33px 28px;">
     <h2 style="text-align:center;">Registrar</h2>
     <form onsubmit="register(event)">
-      <input name="username" required placeholder="Nome completo" style="width:100%;margin-bottom:13px"/>
+      <input name="username" required placeholder="Seu email" style="width:100%;margin-bottom:13px"/>
       <input name="password" type="password" required placeholder="Senha" style="width:100%;margin-bottom:13px"/>
       <input name="key" placeholder="Chave de acesso" required minlength="8" maxlength="8" style="width:100%;margin-bottom:13px"/>
       <label>Cargo:<br>
@@ -483,127 +544,75 @@ window.gotoLogin = function () {
   state.showLogin = true;
   renderApp();
 };
-window.register = function (ev) {
+window.register = async function (ev) {
   ev.preventDefault();
   const f = ev.target;
-  const username = f.username.value.trim();
+  const email = f.username.value.trim().toLowerCase();
   const password = f.password.value;
   const key = f.key.value.trim();
   const role = f.role.value;
   let isTechLead = !!f.querySelector('#techLeadBox')?.checked;
+
   if (key !== "97990191") return alert("Chave de acesso inválida!");
-  if (state.users.some(u => u.username === username)) {
-    return alert("Já existe usuário com esse nome completo! Faça login.");
-  }
-  if (!username || !role) return alert("Preencha todos os campos! Cargo é obrigatório.");
+  if (!email || !role) return alert("Preencha todos os campos! Cargo é obrigatório.");
+  if (!/\S+@\S+\.\S+/.test(email)) return alert("Digite um e-mail válido!");
   if (role === "Desenvolvedor") {
     if (getTechLeadExists(state.users) && isTechLead) {
       alert("Só pode haver um Tech Lead.");
       isTechLead = false;
     }
   }
-  state.users.push({ username, password, role, isTechLead });
+
+  let { error } = await window.supabase.auth.signUp({
+    email: email,
+    password: password,
+  });
+  if (error) {
+    alert('Erro ao registrar: ' + error.message);
+    return;
+  }
+
+  state.users.push({ username: email, password, role, isTechLead, email });
   saveState();
-  alert("Registrado com sucesso! Agora entre.");
+  alert("Registrado com sucesso! Verifique seu email faça o login.");
   state.showLogin = true;
   renderApp();
 };
-window.login = function (ev) {
+
+window.login = async function (ev) {
   ev.preventDefault();
   const f = ev.target;
-  const username = f.username.value.trim();
+  const email = f.username.value.trim().toLowerCase();
   const password = f.password.value;
-  const u = state.users.find(u => u.username === username && u.password === password);
-  if (!u) return alert("Usuário ou senha incorretos!");
+
+  let { error, data } = await window.supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    alert("Usuário ou senha incorretos! (" + error.message + ")");
+    return;
+  }
+
+  // Busca dados locais extras por email
+  const u = state.users.find(u => u.email === email && u.password === password);
+  if (!u) {
+    alert("Usuário autenticado mas não encontrado nos dados locais. Faça um novo cadastro.");
+    return;
+  }
   state.user = { ...u };
   saveState();
   renderApp();
 };
-window.logout = function () {
+
+window.logout = async function () {
+  await window.supabase.auth.signOut();
   state.user = null;
   state.search = "";
   saveState();
   renderApp();
 };
-window.handleRoleChange = function (role) {
-  const techDiv = document.getElementById("tech-lead-div");
-  if (!techDiv) return;
-  if (role === "Desenvolvedor") {
-    if (getTechLeadExists(state.users)) {
-      techDiv.style.display = "none";
-    } else {
-      techDiv.style.display = "block";
-    }
-  } else {
-    techDiv.style.display = "none";
-  }
-};
 
-/* ======= PESQUISA ======= */
-function renderSearchResults() {
-  const q = (state.search || "").trim().toLowerCase();
-  if (!q) return "";
-  let html = `<div style="max-width:700px;margin:30px auto 0 auto;background:#f4f6fc;border-radius:12px;padding:18px;">
-    <b>Pesquisa:</b> <i>${escapeHtml(state.search)}</i>
-    <button onclick="clearSearch()" style="float:right;background:none;border:none;color:#f33;font-size:18px;" title="Limpar busca">&times;</button>
-    <br><br>`;
-  let users = state.users.filter(u => u.username.toLowerCase().includes(q));
-  if (users.length) {
-    html += `<div><b>Usuários encontrados:</b><br>`;
-    users.forEach(u => {
-      html += `<div class="card-resp">${getAvatar(u.username)}${escapeHtml(u.username)} — ${escapeHtml(u.role)}${u.isTechLead ? " (Tech Lead)" : ""}
-        <br><i>Artefatos:</i> ${state.artefacts.filter(a => a.responsibles.some(r => r.username === u.username)).map(a => `<a href="#" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</a>`).join(", ") || "[Nenhum]"}</div><hr>`;
-    });
-    html += `</div>`;
-  }
-  let arts = state.artefacts.filter(a => a.title.toLowerCase().includes(q));
-  if (arts.length) {
-    html += `<div><b>Artefatos encontrados:</b><br>`;
-    arts.forEach(a => {
-      html += `<div><span class="card-title">${escapeHtml(a.title)}</span> — <b>${escapeHtml(a.sprint)}</b> — <a href="#" onclick="openArtefactModal('${a.id}')">[Detalhes]</a></div>`;
-    });
-    html += `</div>`;
-  }
-  let bydate = state.artefacts.filter(a => a.createdAt && formatDate(a.createdAt, false).includes(q));
-  if (bydate.length) {
-    html += `<div><b>Por data:</b><br>${bydate.map(a => `<div>${formatDate(a.createdAt, false)} <a href="#" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</a></div>`).join("")}</div>`;
-  }
-  let bysprint = state.artefacts.filter(a => a.sprint.toLowerCase().includes(q));
-  if (bysprint.length) {
-    html += `<div><b>Sprint:</b> ${escapeHtml(q.toUpperCase())}<br>${bysprint.map(a => `<span class="card-link-btn" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</span>`).join(" ")}</div>`;
-  }
-  if (!users.length && !arts.length && !bydate.length && !bysprint.length)
-    html += `<i>Nenhum resultado encontrado.</i>`;
-  html += `</div>`;
-  return html;
-}
-
-/* ========== UTILS ========== */
-function escapeHtml(str) {
-  if (!str) return "";
-  return str.replace(/[&<>'"]/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-  }[c]));
-}
-function formatDate(dt, includeTime = true) {
-  if (!dt) return "";
-  const d = new Date(dt);
-  const dateString = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
-  return dateString;
-}
-function formatRich(txt) {
-  if (!txt) return "";
-  return escapeHtml(txt)
-    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
-    .replace(/__(.+?)__/g, '<u>$1</u>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/\[(.+?)\]\((https?:\/\/[^\s]+)\)/g, `<a href="$2" target="_blank">$1</a>`)
-    .replace(/(https?:\/\/[^\s]+)/g, `<a href="$1" target="_blank">$1</a>`)
-    .replace(/\/code[\s:]*\n?([\s\S]+)/ig, `<pre>$1</pre>`);
-}
-
+// Após todas as funções
 renderApp();

@@ -4,16 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Scrum Info Hub</title>
-<!-- Font Awesome para ícones -->
+  <!-- Font Awesome para ícones -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
   <!-- Fonte básica do projeto -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arial:400,700"/>
-<!-- Seu CSS principal -->
+  <!-- Seu CSS principal -->
   <link rel="stylesheet" href="style.css"/>
+  
+  <!-- SUPABASE JS CLIENT CONFIGURADO -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://vsbwgdjyqbthfxewqsbs.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzYndnZGp5cWJ0aGZ4ZXdxc2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNDY5ODgsImV4cCI6MjA2MjgyMjk4OH0.Cw8xMzk3E5DUNashcWpWSO8EM9q0jS11faKsSi832F0';
+    window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
 </head>
 <body>
   <div id="app"></div>
-<!-- Seu JavaScript principal -->
+  <!-- Seu JavaScript principal -->
   <script src="app.js"></script>
 </body>
 </html>
