@@ -22,6 +22,7 @@ window.state = {
   _shouldFocusSearch: false,
   loading: false,
   showLogin: true,
+  booting: true,
   errorRegister: ""
 };
 
@@ -194,6 +195,10 @@ function saveFavs() { localStorage.setItem("s_fav_v1", JSON.stringify(state.favo
 
 // ==== APP: RENDER HTML ====
 function renderApp() {
+  if (state.booting) {
+    document.getElementById("app").innerHTML = `<div style="text-align:center; margin:60px;font-size:1.5em;color:#2563eb">Carregando dados...</div>`;
+    return;
+  }
   document.getElementById("app").innerHTML =
     `${state.user ? renderHeader() : ""}
     ${state.user && state.showFavBar ? renderFavoritesBar() : ""}
@@ -684,9 +689,11 @@ async function boot() {
     await loadMeAndProfiles();
     await fetchArtefactsFromSupabase();
     setupArtefactsRealtime();
-    renderApp(); // <-- renderApp só aqui dentro do if
-    return;      // <-- adiciona o return
+    state.booting = false;
+    renderApp();
+    return;
   }
+  state.booting = false;
   renderApp();
 }
 boot();
