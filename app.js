@@ -13,7 +13,7 @@ window.state = {
   modalArtefact: null,
   search: "",
   showFavBar: false,
-  favorites: (JSON.parse(localStorage.getItem("s_fav_v1"))||[]),
+  favorites: (JSON.parse(localStorage.getItem("s_fav_v1")) || []),
   editingArtefact: null,
   showNewArtefact: false,
   dropdownResponsaveis: false,
@@ -32,13 +32,13 @@ function getAvatar(name) {
 function escapeHtml(str) {
   if (!str) return "";
   return (str + "")
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 function formatDate(dt) {
   if (!dt) return "";
   const d = new Date(dt);
-  return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+  return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
 }
 function formatRich(txt) {
   if (!txt) return "";
@@ -59,7 +59,7 @@ function renderHeader() {
         <div class="logo-title" style="font-weight:bold;font-size:1.55em;">
           <i class="fa fa-cube" style="color:#2563eb;margin-right:8px"></i> SCRUMING
         </div>
-        <div class="search-box" style="min-width:260px;">
+        <div class="search-box" style="min-width:300px;">
           <input type="text" placeholder="Buscar por artefato ou usuário..." value="${escapeHtml(state.search)}" 
             oninput="appSearch(this.value)" />
           <i class="fa fa-search"></i>
@@ -69,11 +69,11 @@ function renderHeader() {
       <div style="display:flex;align-items:center;gap:15px;">
         <div class="sprint-dropdown">
           <select onchange="appChangeSprint(this.value)">
-            ${SPRINTS.map((s,i)=>`<option value="${i}"${state.sprintIndex===i?' selected':''}>${escapeHtml(s)}</option>`).join("")}
+            ${SPRINTS.map((s, i) => `<option value="${i}"${state.sprintIndex === i ? ' selected' : ''}>${escapeHtml(s)}</option>`).join("")}
           </select>
         </div>
-        <button class="header-btn${state.showFavBar?' fav-active':''}" title="Barra de Favoritos" onclick="toggleFavBar()">
-          <i class="fa${state.showFavBar?'s':'r'} fa-star"></i>
+        <button class="header-btn${state.showFavBar ? ' fav-active' : ''}" title="Barra de Favoritos" onclick="toggleFavBar()">
+          <i class="fa${state.showFavBar ? 's' : 'r'} fa-star"></i>
         </button>
         <div class="user-info">
           <select onchange="if(this.value==='logout'){logout()}">
@@ -94,7 +94,7 @@ async function loadMeAndProfiles() {
   if (!profile) profile = {};
   state.user = { ...user, profile };
   let { data: list } = await supabase.from('profiles').select('*');
-  state.profiles = list||[];
+  state.profiles = list || [];
   renderApp();
 }
 
@@ -104,14 +104,14 @@ async function loadMeAndProfiles() {
 function parseResponsaveis(val) {
   if (!val) return [];
   if (typeof val === "string") {
-    try { val = JSON.parse(val);} catch { return [];}
+    try { val = JSON.parse(val); } catch { return []; }
   }
   if (Array.isArray(val)) {
     // Caso antigo só array de uuid (migração), preenche usando perfis
     if (val.length && typeof val[0] === "string") {
-      return val.map(uid=>{
-        const p = state.profiles.find(u=>u.id===uid);
-        return p ? { id: p.id, name: p.name, role: p.role } : { id:uid, name:"(Inválido)", role:"?" };
+      return val.map(uid => {
+        const p = state.profiles.find(u => u.id === uid);
+        return p ? { id: p.id, name: p.name, role: p.role } : { id: uid, name: "(Inválido)", role: "?" };
       });
     }
     // Já é certo (objetos)
@@ -182,20 +182,20 @@ async function deleteArtefactOnSupabase(id) {
 }
 
 // ==== FAVORITOS LOCAL ====
-function saveFavs() { localStorage.setItem("s_fav_v1", JSON.stringify(state.favorites||[])); }
+function saveFavs() { localStorage.setItem("s_fav_v1", JSON.stringify(state.favorites || [])); }
 
 // ==== APP: RENDER HTML ====
 function renderApp() {
   document.getElementById("app").innerHTML =
-    `${state.user?renderHeader():""}
+    `${state.user ? renderHeader() : ""}
     ${state.user && state.showFavBar ? renderFavoritesBar() : ""}
     <main>
-     ${ state.user ? renderBoardOrSearch() : renderAuthForms() }
+     ${state.user ? renderBoardOrSearch() : renderAuthForms()}
     </main>
     ${state.showModal && state.modalArtefact ? renderArtefactModal(state.modalArtefact) : ""}
     ${state.showNewArtefact ? renderArtefactForm() : ""}
     `;
-  setTimeout(fixSearchFocus,15);
+  setTimeout(fixSearchFocus, 15);
 }
 
 function renderFavoritesBar() {
@@ -204,10 +204,10 @@ function renderFavoritesBar() {
   return `<div class="fav-bar-under">
       <span class="fav-title"><i class="fa fa-star"></i> Favoritos</span>
       ${state.favorites.map(id => {
-        const art = state.artefacts.find(a => a.id === id);
-        if (!art) return "";
-        return `<button class="fav-item-btn" onclick="favOpenArtefact('${id}')">${escapeHtml(art.title)}</button>`;
-      }).join("")}
+    const art = state.artefacts.find(a => a.id === id);
+    if (!art) return "";
+    return `<button class="fav-item-btn" onclick="favOpenArtefact('${id}')">${escapeHtml(art.title)}</button>`;
+  }).join("")}
       <button class="close-fav-bar" onclick="toggleFavBar()" title="Fechar favoritos">&times;</button>
     </div>`;
 }
@@ -226,32 +226,32 @@ function renderBoardOrSearch() {
   ];
   return `<div class="board">
     ${columns.map(col =>
-      `<div class="column" ondragover="allowDrop(event)" ondrop="dropTask(event,'${col.key}')">
+    `<div class="column" ondragover="allowDrop(event)" ondrop="dropTask(event,'${col.key}')">
         <div class="column-title">${col.label}</div>
         <div class="cards-list">
         ${tasks.filter(col.filter).map(task => renderCard(task)).join("")}
         </div>
         ${col.key === "todo" ? `<button class="btn" onclick="showNewArtefactForm()">+ Novo Artefato/Tarefa</button>` : ""}
       </div>`
-    ).join("")}
+  ).join("")}
   </div>`;
 }
 
 function renderCard(task) {
   return `<div class="card" draggable="true" ondragstart="dragTask(event,'${task.id}')" id="card-${task.id}">
     <div class="card-title" onclick="openArtefactModal('${task.id}')" style="cursor:pointer">${escapeHtml(task.title)}</div>
-    <div class="card-resp">Por: ${escapeHtml((task.responsibles||[]).map(r => r.name).join(", "))}</div>
+    <div class="card-resp">Por: ${escapeHtml((task.responsibles || []).map(r => r.name).join(", "))}</div>
     <div class="card-date">${escapeHtml(formatDate(task.createdAt))}</div>
     ${task.status === "progress" ? `
       <div class="card-pct">
-        <label>Concluído: <input type="number" min="0" max="100" value="${task.pct||0}" style="width:40px" onchange="updatePct('${task.id}',this.value)" />%</label>
+        <label>Concluído: <input type="number" min="0" max="100" value="${task.pct || 0}" style="width:40px" onchange="updatePct('${task.id}',this.value)" />%</label>
       </div>
     ` : ""}
     ${task.status === "done" ? `
       <button class="card-link-btn" onclick="openArtefactModal('${task.id}')">Ver Artefato</button>
     ` : ""}
     <div style="margin-top:7px">
-      <button class="card-link-btn" onclick="toggleFavorite('${task.id}')"><i class="fa${(state.favorites||[]).includes(task.id)?'s':'r'} fa-star"></i> Favorito</button>
+      <button class="card-link-btn" onclick="toggleFavorite('${task.id}')"><i class="fa${(state.favorites || []).includes(task.id) ? 's' : 'r'} fa-star"></i> Favorito</button>
       <button class="card-link-btn" style="background:#f9ba3399" onclick="editArtefact('${task.id}')"><i class="fa fa-edit"></i> Editar</button>
       <button class="card-link-btn" style="background:#ffacb199" onclick="deleteArtefact('${task.id}')"><i class="fa fa-trash"></i> Excluir</button>
     </div>
@@ -262,15 +262,15 @@ function renderResponsaveisSelector() {
   return `<div class="selector-box">
       <button type="button" class="selector-btn${state.dropdownResponsaveis ? ' active' : ''}"
         onclick="toggleDropdownResp()">${state.tempResponsaveis.length ? '<span class="selector-tags">' + state.tempResponsaveis.map(uid => {
-          const p = state.profiles.find(u => u.id === uid);
-          if (!p) return '';
-          return `<span class="selector-tag">${escapeHtml(p.name)}</span>`;
-        }).join('') + '</span>' : 'Selecione responsáveis'} <i class="fa fa-caret-down" style="margin-left:auto"></i>
+    const p = state.profiles.find(u => u.id === uid);
+    if (!p) return '';
+    return `<span class="selector-tag">${escapeHtml(p.name)}</span>`;
+  }).join('') + '</span>' : 'Selecione responsáveis'} <i class="fa fa-caret-down" style="margin-left:auto"></i>
       </button>
       ${state.dropdownResponsaveis ? `<div class="selector-list">${state.profiles.map(u => {
-        const checked = state.tempResponsaveis.includes(u.id);
-        return `<label><input type="checkbox" value="${u.id}"${checked ? " checked" : ""} onchange="toggleRespOption(this)" /> ${escapeHtml(u.name)} <span style="color:#888;font-size:0.9em;">(${escapeHtml(u.role)})</span>${u.is_tech_lead?" <span class='tech-lead-badge'>TL</span>":""}</label>`;
-      }).join('')}</div>` : ''}
+    const checked = state.tempResponsaveis.includes(u.id);
+    return `<label><input type="checkbox" value="${u.id}"${checked ? " checked" : ""} onchange="toggleRespOption(this)" /> ${escapeHtml(u.name)} <span style="color:#888;font-size:0.9em;">(${escapeHtml(u.role)})</span>${u.is_tech_lead ? " <span class='tech-lead-badge'>TL</span>" : ""}</label>`;
+  }).join('')}</div>` : ''}
     </div>`;
 }
 
@@ -287,71 +287,71 @@ function renderArtefactForm() {
       <div class="modal-header"><b>${editing ? "Editar Artefato / Tarefa" : "Novo Artefato / Tarefa"}</b></div>
       <form onsubmit="createArtefact(event)">
         <label>Título:</label>
-        <input required type="text" name="title" placeholder="Título" value="${escapeHtml(formData.title||"")}" oninput="handleArtefactFormInput('title', this.value)" />
+        <input required type="text" name="title" placeholder="Título" value="${escapeHtml(formData.title || "")}" oninput="handleArtefactFormInput('title', this.value)" />
 
         <label>Responsáveis:</label>
         ${renderResponsaveisSelector()}
 
         <label>Justificativa (responsável):</label>
-        <textarea name="responsibleJustif" required oninput="handleArtefactFormInput('responsibleJustif', this.value)">${escapeHtml(formData.responsibleJustif||"")}</textarea>
+        <textarea name="responsibleJustif" required oninput="handleArtefactFormInput('responsibleJustif', this.value)">${escapeHtml(formData.responsibleJustif || "")}</textarea>
 
         <label>Sprint:</label>
         <select name="sprint" required onchange="handleArtefactFormInput('sprint', this.value)">
-          ${SPRINTS.map((s,i)=>
-            `<option value="${s}"${(formData.sprint||SPRINTS[state.sprintIndex])===s?" selected":""}>${s}</option>`
-          ).join("")}
+          ${SPRINTS.map((s, i) =>
+    `<option value="${s}"${(formData.sprint || SPRINTS[state.sprintIndex]) === s ? " selected" : ""}>${s}</option>`
+  ).join("")}
         </select>
 
         <label>Ferramenta (tecnologia, lib...):</label>
-        <input type="text" name="tool" placeholder="Ex: Figma, React..." value="${escapeHtml(formData.tool||"")}" oninput="handleArtefactFormInput('tool', this.value)" />
+        <input type="text" name="tool" placeholder="Ex: Figma, React..." value="${escapeHtml(formData.tool || "")}" oninput="handleArtefactFormInput('tool', this.value)" />
 
         <label>Justificativa (ferramenta):</label>
-        <textarea name="toolJustif" oninput="handleArtefactFormInput('toolJustif', this.value)">${escapeHtml(formData.toolJustif||"")}</textarea>
+        <textarea name="toolJustif" oninput="handleArtefactFormInput('toolJustif', this.value)">${escapeHtml(formData.toolJustif || "")}</textarea>
 
         <label>Descrição/Detalhes:</label>
-        <textarea name="description" oninput="handleArtefactFormInput('description', this.value)">${escapeHtml(formData.description||"")}</textarea>
+        <textarea name="description" oninput="handleArtefactFormInput('description', this.value)">${escapeHtml(formData.description || "")}</textarea>
 
         <label>Data:</label>
         <input type="date" name="datareg" value="${dataVal}" onchange="handleArtefactFormInput('datareg', this.value)" />
 
         <label>Link do arquivo (opcional):</label>
-        <input type="text" name="fileLink" value="${escapeHtml(formData.fileLink||"")}" oninput="handleArtefactFormInput('fileLink', this.value)" />
+        <input type="text" name="fileLink" value="${escapeHtml(formData.fileLink || "")}" oninput="handleArtefactFormInput('fileLink', this.value)" />
 
         <br>
-        <button class="btn" type="submit">${editing?'Salvar':'Criar'}</button>
+        <button class="btn" type="submit">${editing ? 'Salvar' : 'Criar'}</button>
       </form>
     </div>
   </div>`;
 }
 
 // ==== NOVO: Handler para atualizar o estado do form ====
-window.handleArtefactFormInput = function(field, value) {
+window.handleArtefactFormInput = function (field, value) {
   if (!state.tempArtefactForm) state.tempArtefactForm = {};
   state.tempArtefactForm[field] = value;
 };
 
 // ==== MODAL DETALHE ====
-window.openArtefactModal = function(id) {
+window.openArtefactModal = function (id) {
   state.showModal = true;
   state.modalArtefact = state.artefacts.find(a => a.id === id);
   renderApp();
 };
-window.closeModal = function(e) {
-  if (e && e.target!==e.currentTarget) return;
+window.closeModal = function (e) {
+  if (e && e.target !== e.currentTarget) return;
   state.showModal = false;
   state.modalArtefact = null;
   renderApp();
 };
 
 // ==== FAVORITOS ====
-window.toggleFavorite = function(id) {
+window.toggleFavorite = function (id) {
   if (!state.favorites) state.favorites = [];
   if (state.favorites.includes(id)) state.favorites = state.favorites.filter(f => f !== id);
   else state.favorites.push(id);
   saveFavs();
   renderApp();
 };
-window.favOpenArtefact = function(id) {
+window.favOpenArtefact = function (id) {
   state.showModal = true;
   state.modalArtefact = state.artefacts.find(a => a.id === id);
   renderApp();
@@ -362,12 +362,12 @@ window.toggleFavBar = function () {
 };
 
 // ==== SEARCH & SPRINT ====
-window.appSearch = function(val) {
+window.appSearch = function (val) {
   state.search = val;
   state._shouldFocusSearch = true;
   renderApp();
 };
-window.clearSearch = function() {
+window.clearSearch = function () {
   state.search = "";
   renderApp();
 };
@@ -384,7 +384,7 @@ function fixSearchFocus() {
   }
 }
 window.appChangeSprint = (idxStr) => {
-  state.sprintIndex = parseInt(idxStr,10);
+  state.sprintIndex = parseInt(idxStr, 10);
   state.search = "";
   state.showNewArtefact = false;
   renderApp();
@@ -392,25 +392,25 @@ window.appChangeSprint = (idxStr) => {
 
 // ==== SEARCH RESULT ====
 function renderSearchResults() {
-  const q = (state.search||"").trim().toLowerCase();
+  const q = (state.search || "").trim().toLowerCase();
   if (!q) return "";
   let html = `<div style="max-width:700px;margin:30px auto 0 auto;background:#f4f6fc;border-radius:12px;padding:18px;">
     <b>Pesquisa:</b> <i>${escapeHtml(state.search)}</i>
     <button onclick="clearSearch()" style="float:right;background:none;border:none;color:#f33;font-size:18px;" title="Limpar busca">&times;</button>
     <br><br>`;
-  let users = state.profiles.filter(u=>u.name.toLowerCase().includes(q));
-  if (users.length){
+  let users = state.profiles.filter(u => u.name.toLowerCase().includes(q));
+  if (users.length) {
     html += `<div><b>Usuários encontrados:</b><br>`;
-    users.forEach(u=>{
-      html += `<div class="card-resp">${getAvatar(u.name)}${escapeHtml(u.name)} — ${escapeHtml(u.role)}${u.is_tech_lead ? " (Tech Lead)":""
-        }<br><i>Artefatos:</i> ${state.artefacts.filter(a=>(a.responsibles||[]).some(r=>r.id===u.id)).map(a=>`<a href="#" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</a>`).join(", ")||"[Nenhum]"}</div><hr>`;
+    users.forEach(u => {
+      html += `<div class="card-resp">${getAvatar(u.name)}${escapeHtml(u.name)} — ${escapeHtml(u.role)}${u.is_tech_lead ? " (Tech Lead)" : ""
+        }<br><i>Artefatos:</i> ${state.artefacts.filter(a => (a.responsibles || []).some(r => r.id === u.id)).map(a => `<a href="#" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</a>`).join(", ") || "[Nenhum]"}</div><hr>`;
     });
     html += `</div>`;
   }
-  let arts = state.artefacts.filter(a=>a.title.toLowerCase().includes(q));
-  if (arts.length){
+  let arts = state.artefacts.filter(a => a.title.toLowerCase().includes(q));
+  if (arts.length) {
     html += `<div><b>Artefatos encontrados:</b><br>`;
-    arts.forEach(a=>{
+    arts.forEach(a => {
       html += `<div><span class="card-title">${escapeHtml(a.title)}</span> — <b>${escapeHtml(a.sprint)}</b> — <a href="#" onclick="openArtefactModal('${a.id}')">[Detalhes]</a></div>`;
     });
     html += `</div>`;
@@ -432,7 +432,7 @@ function renderSearchResults() {
 // ==== NOVO Artefato/Editar Form: zera ou pré-carrega o estado do form ====
 
 // Novo artefato
-window.showNewArtefactForm = async function() {
+window.showNewArtefactForm = async function () {
   state.loading = true;
   renderApp();
   await loadMeAndProfiles();
@@ -446,7 +446,7 @@ window.showNewArtefactForm = async function() {
     tool: "",
     toolJustif: "",
     description: "",
-    datareg: new Date().toISOString().slice(0,10),
+    datareg: new Date().toISOString().slice(0, 10),
     fileLink: ""
   };
 
@@ -456,8 +456,8 @@ window.showNewArtefactForm = async function() {
   renderApp();
 };
 // Fechar form
-window.closeNewArtefactForm = function(e) {
-  if (e && e.target!==e.currentTarget) return;
+window.closeNewArtefactForm = function (e) {
+  if (e && e.target !== e.currentTarget) return;
   state.showNewArtefact = false;
   state.editingArtefact = null;
   state.tempResponsaveis = [];
@@ -466,12 +466,12 @@ window.closeNewArtefactForm = function(e) {
   renderApp();
 };
 // Editar artefato
-window.editArtefact = async function(id) {
+window.editArtefact = async function (id) {
   state.loading = true; renderApp();
   await loadMeAndProfiles();
   const art = state.artefacts.find(a => a.id === id);
   if (!art) { state.loading = false; renderApp(); return; }
-  state.editingArtefact = {...art};
+  state.editingArtefact = { ...art };
   state.tempArtefactForm = {
     title: art.title || "",
     responsibleJustif: art.responsibleJustif || "",
@@ -479,19 +479,19 @@ window.editArtefact = async function(id) {
     tool: art.tool || "",
     toolJustif: art.toolJustif || "",
     description: art.description || "",
-    datareg: art.createdAt ? new Date(art.createdAt).toISOString().slice(0,10) : new Date().toISOString().slice(0,10),
+    datareg: art.createdAt ? new Date(art.createdAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
     fileLink: art.fileLink || ""
   };
-  state.tempResponsaveis = (art.responsibles||[]).map(r=>r.id);
+  state.tempResponsaveis = (art.responsibles || []).map(r => r.id);
   state.showNewArtefact = true;
   state.loading = false;
   renderApp();
 };
-window.editArtefactFromModal = function(id) {
+window.editArtefactFromModal = function (id) {
   state.showModal = false;
   setTimeout(function () { window.editArtefact(id); }, 70);
 };
-window.deleteArtefact = async function(id) {
+window.deleteArtefact = async function (id) {
   if (!confirm("Tem certeza que deseja excluir este artefato?")) return;
   await deleteArtefactOnSupabase(id);
   state.showModal = false;
@@ -500,12 +500,12 @@ window.deleteArtefact = async function(id) {
   await fetchArtefactsFromSupabase();
   renderApp();
 };
-window.dragTask = function(e, id) {
+window.dragTask = function (e, id) {
   e.dataTransfer.setData("text", id);
   setTimeout(() => e.target.classList.add("dragging"), 1);
 };
-window.allowDrop = function(e) { e.preventDefault(); }
-window.dropTask = async function(e, status) {
+window.allowDrop = function (e) { e.preventDefault(); }
+window.dropTask = async function (e, status) {
   e.preventDefault();
   const id = e.dataTransfer.getData("text");
   const task = state.artefacts.find(a => a.id === id);
@@ -514,7 +514,7 @@ window.dropTask = async function(e, status) {
     await fetchArtefactsFromSupabase();
   }
 };
-window.updatePct = async function(id, val) {
+window.updatePct = async function (id, val) {
   const task = state.artefacts.find(a => a.id === id);
   if (!task) return;
   const pct = Math.min(100, Math.max(0, parseInt(val, 10) || 0));
@@ -523,42 +523,42 @@ window.updatePct = async function(id, val) {
 };
 
 // ==== Dropdown responsáveis helper ====
-window.toggleDropdownResp=function(){ state.dropdownResponsaveis=!state.dropdownResponsaveis; renderApp();}
-window.toggleRespOption = function(cb) {
+window.toggleDropdownResp = function () { state.dropdownResponsaveis = !state.dropdownResponsaveis; renderApp(); }
+window.toggleRespOption = function (cb) {
   const id = cb.value;
   if (cb.checked && !state.tempResponsaveis.includes(id)) state.tempResponsaveis.push(id);
-  if (!cb.checked && state.tempResponsaveis.includes(id)) state.tempResponsaveis = state.tempResponsaveis.filter(x=>x!==id);
+  if (!cb.checked && state.tempResponsaveis.includes(id)) state.tempResponsaveis = state.tempResponsaveis.filter(x => x !== id);
   renderApp();
 };
 
 // ==== AUTENTICAÇÃO ====
 // LOGIN
-window.login = async function(ev) {
+window.login = async function (ev) {
   ev.preventDefault();
-  state.loading=true; renderApp();
+  state.loading = true; renderApp();
   const f = ev.target;
-  const email = (f.email.value||"").toLowerCase().trim();
+  const email = (f.email.value || "").toLowerCase().trim();
   const password = f.password.value;
-  let {data,error} = await supabase.auth.signInWithPassword({email,password});
-  if(error) {
-    state.loading=false;
+  let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    state.loading = false;
     alert("Usuário/senha inválidos!");
     return;
   }
   await loadMeAndProfiles();
-  state.loading=false;
+  state.loading = false;
   await fetchArtefactsFromSupabase();
   setupArtefactsRealtime();
 };
 // LOGOUT
-window.logout = async function() {
+window.logout = async function () {
   await supabase.auth.signOut();
   state.user = null;
   renderApp();
   if (artefactsRealtimeSub) artefactsRealtimeSub.unsubscribe();
 };
 // REGISTER
-window.register = async function(ev){
+window.register = async function (ev) {
   ev.preventDefault();
   const f = ev.target;
   const name = f.name.value.trim();
@@ -567,31 +567,31 @@ window.register = async function(ev){
   const role = f.role.value;
   const isTechLead = !!f.querySelector('#techLeadBox')?.checked;
   const key = f.key.value.trim();
-  if (key!=="97990191") { state.errorRegister="Chave de acesso incorreta"; renderApp(); return; }
-  if (!/\S+@\S+\.\S+/.test(email)) { state.errorRegister="Email inválido"; renderApp(); return; }
-  if (state.profiles.some(p=>p.role==="Desenvolvedor" && p.is_tech_lead) && isTechLead) {
-    state.errorRegister="Só pode ter um Tech Lead";
+  if (key !== "97990191") { state.errorRegister = "Chave de acesso incorreta"; renderApp(); return; }
+  if (!/\S+@\S+\.\S+/.test(email)) { state.errorRegister = "Email inválido"; renderApp(); return; }
+  if (state.profiles.some(p => p.role === "Desenvolvedor" && p.is_tech_lead) && isTechLead) {
+    state.errorRegister = "Só pode ter um Tech Lead";
     renderApp(); return;
   }
-  state.errorRegister=""; state.loading=true; renderApp();
-  let {data,error} = await supabase.auth.signUp({email,password});
-  if(error){
-    state.errorRegister = "Erro: " + (error.message||"cadastro auth");
-    state.loading=false; renderApp(); return;
+  state.errorRegister = ""; state.loading = true; renderApp();
+  let { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) {
+    state.errorRegister = "Erro: " + (error.message || "cadastro auth");
+    state.loading = false; renderApp(); return;
   }
   let userId = data.user.id;
   await supabase.from('profiles').insert([
-      { id: userId, name, role, is_tech_lead: isTechLead }
+    { id: userId, name, role, is_tech_lead: isTechLead }
   ]);
   alert("Registro criado! Confirme seu email e depois faça o login.");
-  state.showLogin=true; state.loading=false; renderApp();
+  state.showLogin = true; state.loading = false; renderApp();
 };
 
-window.gotoRegister = function () {state.showLogin = false; renderApp();}
-window.gotoLogin = function () {state.showLogin = true; renderApp();}
-window.handleRoleChange = function(role) {
+window.gotoRegister = function () { state.showLogin = false; renderApp(); }
+window.gotoLogin = function () { state.showLogin = true; renderApp(); }
+window.handleRoleChange = function (role) {
   const techDiv = document.getElementById("tech-lead-div");
-  const anyTL = state.profiles.some(x=>x.role==="Desenvolvedor"&&x.is_tech_lead);
+  const anyTL = state.profiles.some(x => x.role === "Desenvolvedor" && x.is_tech_lead);
   if (!techDiv) return;
   if (role === "Desenvolvedor" && !anyTL) {
     techDiv.style.display = "block";
@@ -600,33 +600,33 @@ window.handleRoleChange = function(role) {
 
 // ==== CRUD / ARTEFATOS ====
 // Novo/editar artefato: Use agora o state.tempArtefactForm!
-window.createArtefact = async function(ev) {
+window.createArtefact = async function (ev) {
   ev.preventDefault();
   const d = state.tempArtefactForm || {};
-  const title = (d.title||"").trim();
+  const title = (d.title || "").trim();
   const responsibles = state.tempResponsaveis.map(uid => {
     const p = state.profiles.find(u => u.id === uid);
     return p ? { id: p.id, name: p.name, role: p.role } : null;
   }).filter(Boolean);
-  const responsibleJustif = (d.responsibleJustif||"").trim();
+  const responsibleJustif = (d.responsibleJustif || "").trim();
   const sprint = d.sprint || SPRINTS[state.sprintIndex];
-  const tool = (d.tool||"").trim();
-  const toolJustif = (d.toolJustif||"").trim();
-  const description = d.description||"";
+  const tool = (d.tool || "").trim();
+  const toolJustif = (d.toolJustif || "").trim();
+  const description = d.description || "";
   const dateVal = d.datareg;
-  const fileLink = (d.fileLink||"").trim();
+  const fileLink = (d.fileLink || "").trim();
   let dtFinal = dateVal ? new Date(`${dateVal}T00:00:00`) : new Date();
   if (!responsibles.length) return alert("Selecione pelo menos um responsável.");
   if (state.editingArtefact) {
     const id = state.editingArtefact.id;
     await updateArtefactOnSupabase(id, {
-      title,responsibles,responsibleJustif,sprint,tool,toolJustif,description,
-      created_at: dtFinal,fileLink
+      title, responsibles, responsibleJustif, sprint, tool, toolJustif, description,
+      created_at: dtFinal, fileLink
     });
     state.editingArtefact = null;
   } else {
     await createArtefactOnSupabase({
-      title,responsibles,responsibleJustif,sprint,tool,toolJustif,description,
+      title, responsibles, responsibleJustif, sprint, tool, toolJustif, description,
       createdAt: dtFinal,
       status: "todo",
       pct: 0,
@@ -645,10 +645,10 @@ window.createArtefact = async function(ev) {
 async function boot() {
   let { data: { user } } = await supabase.auth.getUser();
   if (user && !state.user) {
-     state.user=null;
-     await loadMeAndProfiles();
-     await fetchArtefactsFromSupabase();
-     setupArtefactsRealtime();
+    state.user = null;
+    await loadMeAndProfiles();
+    await fetchArtefactsFromSupabase();
+    setupArtefactsRealtime();
   }
   renderApp();
 }
