@@ -53,7 +53,12 @@ function formatRich(txt) {
 
 // ==== HEADER ====
 function renderHeader() {
-  if (!state.user) return "";
+  // Defesa extra para garantir que state.user é um objeto
+  if (!state.user || typeof state.user !== 'object') return "";
+
+  const profile = state.user.profile || {};
+  const name = profile.name || state.user.name || state.user.email || "[Usuário]";
+
   return `
     <header class="header" style="display:flex;align-items:center;justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:18px">
@@ -77,13 +82,8 @@ function renderHeader() {
           <i class="fa${state.showFavBar ? 's' : 'r'} fa-star"></i>
         </button>
         <div class="user-info" style="display:flex;align-items:center;gap:8px;">
-           <span>${escapeHtml(
-             state.user?.profile?.name ||
-             state.user?.name ||
-             state.user?.email ||
-             "[Usuário]"
-           )}</span>
-            <button onclick="logout()" class="logout-btn" title="Sair" style="background:#f4f6fc;padding:7px 18px;border-radius:7px;border:1px solid #e2e5ea;color:#204090;font-size:1rem;cursor:pointer;margin-left:6px;">
+          <span>${escapeHtml(name)}</span>
+          <button onclick="logout()" class="logout-btn" title="Sair" style="background:#f4f6fc;padding:7px 18px;border-radius:7px;border:1px solid #e2e5ea;color:#204090;font-size:1rem;cursor:pointer;margin-left:6px;">
             <i class="fa fa-sign-out-alt"></i> Sair
           </button>
         </div>
@@ -684,6 +684,8 @@ async function boot() {
     await loadMeAndProfiles();
     await fetchArtefactsFromSupabase();
     setupArtefactsRealtime();
+    renderApp(); // <-- renderApp só aqui dentro do if
+    return;      // <-- adiciona o return
   }
   renderApp();
 }
