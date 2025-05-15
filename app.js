@@ -99,25 +99,36 @@ async function loadMeAndProfiles() {
 
 // ==== ARTEFATOS CRUD ====
 
-// Garantia de parsing e consistência para campo responsaveis
+// Sempre transformar responsaveis em array de objetos [{id, name, role}]
 function parseResponsaveis(val) {
   if (!val) return [];
   if (typeof val === "string") {
-    try { return JSON.parse(val); } catch { return []; }
+    try { val = JSON.parse(val);} catch { return [];}
   }
-  if (Array.isArray(val)) return val;
-  if (typeof val === "object") return [val];
+  if (Array.isArray(val)) {
+    // Caso antigo só array de uuid (migração), preenche usando perfis
+    if (val.length && typeof val[0] === "string") {
+      return val.map(uid=>{
+        const p = state.profiles.find(u=>u.id===uid);
+        return p ? { id: p.id, name: p.name, role: p.role } : { id:uid, name:"(Inválido)", role:"?" };
+      });
+    }
+    // Já é certo (objetos)
+    return val;
+  }
+  if (typeof val === "object" && val.id) return [val];
   return [];
 }
 
+// FETCH artefatos e converte responsaveis corretamente
 async function fetchArtefactsFromSupabase() {
   const { data, error } = await supabase
     .from('artefacts').select('*').order('created_at', { ascending: true });
   if (!error) {
     state.artefacts = (data || []).map(item => ({
       ...item,
-      responsaveis: parseResponsaveis(item.responsaveis),  // mantém bruto original pro update
-      responsibles: parseResponsaveis(item.responsaveis),  // para a app internamente (padronização)
+      responsaveis: parseResponsaveis(item.responsaveis), // campo original banco
+      responsibles: parseResponsaveis(item.responsaveis),  // uso interno UI
       createdAt: item.created_at || item.createdAt
     }));
     renderApp();
@@ -136,11 +147,12 @@ async function setupArtefactsRealtime() {
     }).subscribe();
 }
 
+// Salvar artefato com responsáveis (array de objeto)
 async function createArtefactOnSupabase(obj) {
   const user = state.user;
   const artefact = {
     title: obj.title,
-    responsaveis: obj.responsibles, // jsonb no banco, envia array mesmo
+    responsaveis: obj.responsibles,
     responsibleJustif: obj.responsibleJustif,
     sprint: obj.sprint,
     tool: obj.tool,
@@ -156,14 +168,12 @@ async function createArtefactOnSupabase(obj) {
   const { error } = await supabase.from('artefacts').insert([artefact]);
   if (error) alert("Erro ao criar artefato: " + error.message);
 }
-
 async function updateArtefactOnSupabase(id, updateFields) {
   if (updateFields.responsibles)
-    updateFields['responsaveis'] = updateFields.responsibles; // passe array como jsonb
+    updateFields['responsaveis'] = updateFields.responsibles;
   const { error } = await supabase.from('artefacts').update(updateFields).eq('id', id);
   if (error) alert("Erro ao atualizar artefato: " + error.message);
 }
-
 async function deleteArtefactOnSupabase(id) {
   const { error } = await supabase.from('artefacts').delete().eq('id', id);
   if (error) alert("Erro ao apagar artefato: " + error.message);
