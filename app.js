@@ -78,9 +78,9 @@ function renderHeader() {
         </button>
         <div class="user-info" style="display:flex;align-items:center;gap:8px;">
            <span>${escapeHtml(
-             (state.user.profile && state.user.profile.name) ||
-             state.user.name ||
-             state.user.email ||
+             state.user?.profile?.name ||
+             state.user?.name ||
+             state.user?.email ||
              "[Usuário]"
            )}</span>
             <button onclick="logout()" class="logout-btn" title="Sair" style="background:#f4f6fc;padding:7px 18px;border-radius:7px;border:1px solid #e2e5ea;color:#204090;font-size:1rem;cursor:pointer;margin-left:6px;">
