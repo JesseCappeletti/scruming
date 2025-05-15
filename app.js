@@ -24,7 +24,7 @@ const state = {
   errorRegister: ""
 };
 
-// ==== UTILITARIOS ====
+// ==== UTILITÁRIOS ====
 function getAvatar(name) {
   return `<span style="background:#2563eb33;border-radius:50%;display:inline-block;width:27px;height:27px;line-height:27px;font-weight:bold;color:#2563eb;text-align:center;margin-right:3px">${(name || "?")[0].toUpperCase()}</span>`;
 }
@@ -50,7 +50,7 @@ function formatRich(txt) {
     .replace(/\/code[\s:]*\n?([\s\S]+)/ig, `<pre>$1</pre>`);
 }
 
-// ==== HEADER principal ====
+// ==== HEADER ====
 function renderHeader() {
   return `
     <header class="header" style="display:flex;align-items:center;justify-content:space-between;">
@@ -85,45 +85,47 @@ function renderHeader() {
   `;
 }
 
-
-
-// ==== SUPABASE: PERFIL (PROFILES) ====
+// ==== PERFIS (PROFILES) ====
 async function loadMeAndProfiles() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { state.user = null; renderApp(); return; }
-  // Busca profile completo
   let { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
   if (!profile) profile = {};
   state.user = { ...user, profile };
-  // Busca todos os usuários para o selector
   let { data: list } = await supabase.from('profiles').select('*');
   state.profiles = list||[];
   renderApp();
 }
 
-// ==== SUPABASE: CRUD ARTEFATOS ====
+// ==== ARTEFATOS CRUD ====
+
+// Garantia de parsing e consistência para campo responsaveis
+function parseResponsaveis(val) {
+  if (!val) return [];
+  if (typeof val === "string") {
+    try { return JSON.parse(val); } catch { return []; }
+  }
+  if (Array.isArray(val)) return val;
+  if (typeof val === "object") return [val];
+  return [];
+}
+
 async function fetchArtefactsFromSupabase() {
   const { data, error } = await supabase
     .from('artefacts').select('*').order('created_at', { ascending: true });
   if (!error) {
     state.artefacts = (data || []).map(item => ({
-  ...item,
-  responsibles: (() => {
-    if (!item.responsaveis) return [];
-    if (typeof item.responsaveis === "string") {
-      try { return JSON.parse(item.responsaveis); } catch { return []; }
-    }
-    if (Array.isArray(item.responsaveis)) return item.responsaveis;
-    return [];
-  })(),
-  createdAt: item.created_at || item.createdAt
-}));
-
+      ...item,
+      responsaveis: parseResponsaveis(item.responsaveis),  // mantém bruto original pro update
+      responsibles: parseResponsaveis(item.responsaveis),  // para a app internamente (padronização)
+      createdAt: item.created_at || item.createdAt
+    }));
     renderApp();
   } else {
     alert("Erro ao ler artefatos do Supabase: " + error.message);
   }
 }
+
 let artefactsRealtimeSub = null;
 async function setupArtefactsRealtime() {
   if (artefactsRealtimeSub) artefactsRealtimeSub.unsubscribe();
@@ -133,12 +135,12 @@ async function setupArtefactsRealtime() {
       fetchArtefactsFromSupabase();
     }).subscribe();
 }
+
 async function createArtefactOnSupabase(obj) {
   const user = state.user;
-  const responsaveis = JSON.stringify(obj.responsibles || []);
-  const body = {
+  const artefact = {
     title: obj.title,
-    responsaveis,
+    responsaveis: obj.responsibles, // jsonb no banco, envia array mesmo
     responsibleJustif: obj.responsibleJustif,
     sprint: obj.sprint,
     tool: obj.tool,
@@ -151,15 +153,17 @@ async function createArtefactOnSupabase(obj) {
     created_by: user.profile?.name || user.email,
     creator_id: user.id
   };
-  const { error } = await supabase.from('artefacts').insert([body]);
+  const { error } = await supabase.from('artefacts').insert([artefact]);
   if (error) alert("Erro ao criar artefato: " + error.message);
 }
+
 async function updateArtefactOnSupabase(id, updateFields) {
   if (updateFields.responsibles)
-    updateFields['responsaveis'] = JSON.stringify(updateFields.responsibles);
+    updateFields['responsaveis'] = updateFields.responsibles; // passe array como jsonb
   const { error } = await supabase.from('artefacts').update(updateFields).eq('id', id);
   if (error) alert("Erro ao atualizar artefato: " + error.message);
 }
+
 async function deleteArtefactOnSupabase(id) {
   const { error } = await supabase.from('artefacts').delete().eq('id', id);
   if (error) alert("Erro ao apagar artefato: " + error.message);
@@ -495,7 +499,6 @@ window.createArtefact = async function(ev) {
   state.showNewArtefact = false;
   state.tempResponsaveis = [];
   state.dropdownResponsaveis = false;
-  // <-- CORREÇÃO: aguarde sempre artefatos e re-renderize depois de gravar
   await fetchArtefactsFromSupabase();
   renderApp();
 };
@@ -561,7 +564,7 @@ window.dropTask = async function(e, status) {
   const task = state.artefacts.find(a => a.id === id);
   if (task && ["todo", "progress", "done"].includes(status)) {
     await updateArtefactOnSupabase(id, { status, pct: status !== "progress" ? 0 : (task.pct || 0) });
-    await fetchArtefactsFromSupabase(); // Garante atualização sícrona
+    await fetchArtefactsFromSupabase();
   }
 };
 window.updatePct = async function(id, val) {
