@@ -4,7 +4,7 @@ const ROLES = ["Product Owner", "Scrum Master", "Desenvolvedor"];
 const supabase = window.supabase;
 
 // ==== ESTADO GLOBAL ====
-const state = {
+window.state = {
   user: null,
   profiles: [],
   artefacts: [],
