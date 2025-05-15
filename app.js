@@ -249,6 +249,57 @@ function renderBoardOrSearch() {
   ).join("")}
   </div>`;
 }
+function renderAuthForms() {
+  if (state.showLogin) {
+    return `
+      <div style="max-width:370px;margin:55px auto;padding:26px 32px 32px 32px;background:#f4f6fc;border-radius:15px;box-shadow:0 2px 22px #2563eb15;">
+        <h2 style="color:#2563eb;margin-bottom:22px;">Entrar</h2>
+        <form onsubmit="login(event)">
+          <label>Email:</label>
+          <input type="email" name="email" required style="width:100%;" />
+          <label>Senha:</label>
+          <input type="password" name="password" required style="width:100%;" />
+          <button type="submit" class="btn" style="width:100%;margin-top:22px;">Entrar</button>
+        </form>
+        <div style="margin-top:18px;text-align:center;">
+          <a href="#" onclick="gotoRegister();return false;">Criar conta</a>
+        </div>
+      </div>
+    `;
+  } else {
+    return `
+      <div style="max-width:410px;margin:55px auto;padding:26px 32px 32px 32px;background:#f4f6fc;border-radius:15px;box-shadow:0 2px 22px #2563eb15;">
+        <h2 style="color:#2563eb;margin-bottom:22px;">Criar conta</h2>
+        <form onsubmit="register(event)">
+          <label>Nome:</label>
+          <input type="text" name="name" required style="width:100%;" />
+          <label>Email:</label>
+          <input type="email" name="email" required style="width:100%;" />
+          <label>Senha:</label>
+          <input type="password" name="password" required style="width:100%;" />
+          <label>Cargo:</label>
+          <select name="role" onchange="handleRoleChange(this.value)" required>
+            <option value="">Selecione...</option>
+            <option value="Product Owner">Product Owner</option>
+            <option value="Scrum Master">Scrum Master</option>
+            <option value="Desenvolvedor">Desenvolvedor</option>
+          </select>
+          <div id="tech-lead-div" style="margin:10px 0;display:none;">
+            <input type="checkbox" id="techLeadBox" name="techlead" />
+            <label for="techLeadBox" style="display:inline;">Sou Tech Lead</label>
+          </div>
+          <label>Chave de acesso:</label>
+          <input type="text" name="key" required style="width:100%;" placeholder="Digite a chave fornecida"/>
+          ${state.errorRegister ? `<div style="color:#b4001d;margin-top:10px;">${escapeHtml(state.errorRegister)}</div>` : ""}
+          <button type="submit" class="btn" style="width:100%;margin-top:22px;">Criar Conta</button>
+        </form>
+        <div style="margin-top:18px;text-align:center;">
+          <a href="#" onclick="gotoLogin();return false;">Já tem conta? Entrar</a>
+        </div>
+      </div>
+    `;
+  }
+}
 
 function renderCard(task) {
   return `<div class="card" draggable="true" ondragstart="dragTask(event,'${task.id}')" id="card-${task.id}">
