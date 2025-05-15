@@ -151,11 +151,9 @@ async function setupArtefactsRealtime() {
 // Salvar artefato com responsáveis (array de objeto)
 async function createArtefactOnSupabase(obj) {
   const user = state.user;
-  console.log("user.id =", user.id);
-  console.log("user.profile?.name =", user.profile?.name);
   const artefact = {
     title: obj.title,
-    responsaveis: obj.responsibles,
+    responsaveis: obj.responsibles,   // Se erro, troque por JSON.stringify(...)
     responsibleJustif: obj.responsibleJustif,
     sprint: obj.sprint,
     tool: obj.tool,
@@ -165,13 +163,12 @@ async function createArtefactOnSupabase(obj) {
     status: obj.status || "todo",
     pct: obj.pct || 0,
     fileLink: obj.fileLink || "",
-    created_by: user.profile?.name || user.email,
-    creator_id: user.id
+    created_by: user.id,              // <-- AJUSTE CRÍTICO AQUI!
+    creator_id: user.id               // <-- Já estava certo
   };
-  // NOVO LOG:
   console.log("Artefato que será enviado para o Supabase:", artefact);
   const { error } = await supabase.from('artefacts').insert([artefact]);
-  if (error) alert("Erro ao criar artefato: " + error.message);
+  if (error) alert("Erro ao criar artefato: " + JSON.stringify(error));
 }
 async function updateArtefactOnSupabase(id, updateFields) {
   if (updateFields.responsibles)
