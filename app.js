@@ -165,9 +165,11 @@ async function createArtefactOnSupabase(obj) {
     status: obj.status || "todo",
     pct: obj.pct || 0,
     fileLink: obj.fileLink || "",
-    created_by: user.profile?.name || user.email, // nome ou email: só exibição
-    creator_id: user.id // UID do auth, é UUID mesmo!
+    created_by: user.profile?.name || user.email,
+    creator_id: user.id
   };
+  // NOVO LOG:
+  console.log("Artefato que será enviado para o Supabase:", artefact);
   const { error } = await supabase.from('artefacts').insert([artefact]);
   if (error) alert("Erro ao criar artefato: " + error.message);
 }
