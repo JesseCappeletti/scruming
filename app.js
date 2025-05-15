@@ -59,7 +59,7 @@ function renderHeader() {
         <div class="logo-title" style="font-weight:bold;font-size:1.55em;">
           <i class="fa fa-cube" style="color:#2563eb;margin-right:8px"></i> SCRUMING
         </div>
-        <div class="search-box" style="min-width:300px;">
+        <div class="search-box" style="min-width:400px;">
           <input type="text" placeholder="Buscar por artefato ou usuário..." value="${escapeHtml(state.search)}" 
             oninput="appSearch(this.value)" />
           <i class="fa fa-search"></i>
@@ -244,7 +244,7 @@ function renderCard(task) {
     <div class="card-date">${escapeHtml(formatDate(task.createdAt))}</div>
     ${task.status === "progress" ? `
       <div class="card-pct">
-        <label>Concluído: <input type="number" min="0" max="100" value="${task.pct || 0}" style="width:40px" onchange="updatePct('${task.id}',this.value)" />%</label>
+        <label>Concluído: <input type="number" min="0" max="100" value="${task.pct || 0}" style="width:60px" onchange="updatePct('${task.id}',this.value)" />%</label>
       </div>
     ` : ""}
     ${task.status === "done" ? `
