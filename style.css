@@ -546,3 +546,6 @@ textarea {
     padding: 7px 4vw;
   }
 }
+#app {
+  background-color: rgb(30, 30, 30);
+}
