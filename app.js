@@ -151,6 +151,8 @@ async function setupArtefactsRealtime() {
 // Salvar artefato com responsáveis (array de objeto)
 async function createArtefactOnSupabase(obj) {
   const user = state.user;
+  console.log("user.id =", user.id);
+  console.log("user.profile?.name =", user.profile?.name);
   const artefact = {
     title: obj.title,
     responsaveis: obj.responsibles,
