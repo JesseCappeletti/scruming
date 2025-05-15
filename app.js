@@ -171,8 +171,10 @@ async function createArtefactOnSupabase(obj) {
   if (error) alert("Erro ao criar artefato: " + JSON.stringify(error));
 }
 async function updateArtefactOnSupabase(id, updateFields) {
-  if (updateFields.responsibles)
-    updateFields['responsaveis'] = updateFields.responsibles;
+  if (updateFields.responsibles) {
+    updateFields.responsaveis = updateFields.responsibles;
+    delete updateFields.responsibles; // EVITA ERRO de coluna não existente
+  }
   const { error } = await supabase.from('artefacts').update(updateFields).eq('id', id);
   if (error) alert("Erro ao atualizar artefato: " + error.message);
 }
