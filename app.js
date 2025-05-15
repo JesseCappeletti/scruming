@@ -53,6 +53,7 @@ function formatRich(txt) {
 
 // ==== HEADER ====
 function renderHeader() {
+  if (!state.user) return "";
   return `
     <header class="header" style="display:flex;align-items:center;justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:18px">
