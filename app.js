@@ -18,6 +18,7 @@ window.state = {
   showNewArtefact: false,
   dropdownResponsaveis: false,
   tempResponsaveis: [],
+  tempArtefactForm: null, // <- NOVO: Estado temporário do form
   _shouldFocusSearch: false,
   loading: false,
   showLogin: true,
@@ -266,44 +267,55 @@ function renderResponsaveisSelector() {
         }).join('') + '</span>' : 'Selecione responsáveis'} <i class="fa fa-caret-down" style="margin-left:auto"></i>
       </button>
       ${state.dropdownResponsaveis ? `<div class="selector-list">${state.profiles.map(u => {
-        const checked = state.tempResponsaveis.includes(u.id) ? 'checked' : '';
-        return `<label><input type="checkbox" value="${u.id}" onchange="toggleRespOption(this)" ${checked}/> ${escapeHtml(u.name)} (${escapeHtml(u.role)}${u.is_tech_lead ? " - Tech Lead" : ""}) </label>`;
-      }).join('')}</div>` : ""}
+        const checked = state.tempResponsaveis.includes(u.id);
+        return `<label><input type="checkbox" value="${u.id}"${checked ? " checked" : ""} onchange="toggleRespOption(this)" /> ${escapeHtml(u.name)} <span style="color:#888;font-size:0.9em;">(${escapeHtml(u.role)})</span>${u.is_tech_lead?" <span class='tech-lead-badge'>TL</span>":""}</label>`;
+      }).join('')}</div>` : ''}
     </div>`;
 }
 
+// ==== renderArtefactForm CORRIGIDO ====
 function renderArtefactForm() {
   const editing = !!state.editingArtefact;
-  const data = editing ? state.editingArtefact : {};
-  let dt = data.createdAt ? new Date(data.createdAt) : new Date();
+  const formData = state.tempArtefactForm || {};
+  let dt = formData.datareg ? new Date(formData.datareg) : new Date();
   let dataVal = dt.toISOString().slice(0, 10);
+
   return `<div class="modal-bg" onclick="closeNewArtefactForm(event)">
-    <div class="modal-content" tabindex="0" onclick="event.stopPropagation();" style="width:80%;max-width:900px;margin:0 auto;">
+   <div class="modal-content" tabindex="0" onclick="event.stopPropagation();" style="width:80%;max-width:900px;margin:0 auto;">
       <button class="modal-close" onclick="closeNewArtefactForm()">&times;</button>
       <div class="modal-header"><b>${editing ? "Editar Artefato / Tarefa" : "Novo Artefato / Tarefa"}</b></div>
       <form onsubmit="createArtefact(event)">
         <label>Título:</label>
-        <input required type="text" name="title" placeholder="Título" value="${escapeHtml(data.title||"")}" />
+        <input required type="text" name="title" placeholder="Título" value="${escapeHtml(formData.title||"")}" oninput="handleArtefactFormInput('title', this.value)" />
+
         <label>Responsáveis:</label>
         ${renderResponsaveisSelector()}
+
         <label>Justificativa (responsável):</label>
-        <textarea name="responsibleJustif" required>${escapeHtml(data.responsibleJustif||"")}</textarea>
+        <textarea name="responsibleJustif" required oninput="handleArtefactFormInput('responsibleJustif', this.value)">${escapeHtml(formData.responsibleJustif||"")}</textarea>
+
         <label>Sprint:</label>
-        <select name="sprint" required>
+        <select name="sprint" required onchange="handleArtefactFormInput('sprint', this.value)">
           ${SPRINTS.map((s,i)=>
-            `<option value="${s}"${(data.sprint||SPRINTS[state.sprintIndex])===s?" selected":""}>${s}</option>`
+            `<option value="${s}"${(formData.sprint||SPRINTS[state.sprintIndex])===s?" selected":""}>${s}</option>`
           ).join("")}
         </select>
+
         <label>Ferramenta (tecnologia, lib...):</label>
-        <input type="text" name="tool" placeholder="Ex: Figma, React..." value="${escapeHtml(data.tool||"")}" />
+        <input type="text" name="tool" placeholder="Ex: Figma, React..." value="${escapeHtml(formData.tool||"")}" oninput="handleArtefactFormInput('tool', this.value)" />
+
         <label>Justificativa (ferramenta):</label>
-        <textarea name="toolJustif">${escapeHtml(data.toolJustif||"")}</textarea>
+        <textarea name="toolJustif" oninput="handleArtefactFormInput('toolJustif', this.value)">${escapeHtml(formData.toolJustif||"")}</textarea>
+
         <label>Descrição/Detalhes:</label>
-        <textarea name="description">${escapeHtml(data.description||"")}</textarea>
+        <textarea name="description" oninput="handleArtefactFormInput('description', this.value)">${escapeHtml(formData.description||"")}</textarea>
+
         <label>Data:</label>
-        <input type="date" name="datareg" value="${dataVal}"/>
+        <input type="date" name="datareg" value="${dataVal}" onchange="handleArtefactFormInput('datareg', this.value)" />
+
         <label>Link do arquivo (opcional):</label>
-        <input type="text" name="fileLink" value="${escapeHtml(data.fileLink||"")}" />
+        <input type="text" name="fileLink" value="${escapeHtml(formData.fileLink||"")}" oninput="handleArtefactFormInput('fileLink', this.value)" />
+
         <br>
         <button class="btn" type="submit">${editing?'Salvar':'Criar'}</button>
       </form>
@@ -311,278 +323,10 @@ function renderArtefactForm() {
   </div>`;
 }
 
-function renderArtefactModal(task) {
-  return `<div class="modal-bg" onclick="closeModal(event)">
-    <div class="modal-content document-modal" tabindex="0" onclick="event.stopPropagation();" style="width:80%;max-width:900px;margin:0 auto;">
-      <button class="modal-close" onclick="closeModal()" title="Fechar">&times;</button>
-      <div class="document-header">
-        <h2>${escapeHtml(task.title)}</h2>
-      </div>
-      <div class="document-section">
-        <strong>Responsável:</strong>
-        <span>${escapeHtml((task.responsibles||[]).map(r => r.name).join(", "))}</span>
-      </div>
-      <div class="document-section">
-        <strong>Justificativa (responsável):</strong><br>
-        <span>${escapeHtml(task.responsibleJustif||"")}</span>
-      </div>
-      <div class="document-section">
-        <strong>Sprint:</strong> <span>${escapeHtml(task.sprint)}</span>
-        <span style="margin-left:32px"><strong>Data:</strong> ${escapeHtml(formatDate(task.createdAt))}</span>
-      </div>
-      <div class="document-section">
-        <strong>Ferramenta:</strong> <span>${escapeHtml(task.tool||"")}</span><br>
-        <strong>Justificativa (ferramenta):</strong> <span>${escapeHtml(task.toolJustif||"")}</span>
-      </div>
-      <div class="document-section">
-        <strong>Descrição:</strong><br>
-        <span>${formatRich(task.description)}</span>
-      </div>
-      ${task.fileLink ? `<div class="document-section">
-        <strong>Link do Arquivo:</strong><br/>
-        <a href="${escapeHtml(task.fileLink)}" target="_blank">${escapeHtml(task.fileLink)}</a>
-      </div>` : ""}
-      <div class="document-actions">
-        <button class="btn" onclick="toggleFavorite('${task.id}')">
-          <i class="fa${(state.favorites||[]).includes(task.id)?'s':'r'} fa-star"></i> Favoritar
-        </button>
-        <button class="btn" onclick="editArtefactFromModal('${task.id}')" style="background:#f9ba33;">Editar</button>
-        <button class="btn" onclick="deleteArtefact('${task.id}')" style="background:#ea4444;">Excluir</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ==== LOGIN & REGISTRO ====
-function renderAuthForms() { return state.showLogin ? renderLoginForm() : renderRegisterForm(); }
-
-function renderLoginForm() {
-  return `<div style="max-width:420px;margin:50px auto;background:#eef3fa;padding:30px 26px;border-radius:14px;box-shadow:0 8px 38px #2463eb13;">
-    <h2 style="margin-bottom:22px;color:#2563eb"><i class="fa fa-cube"></i> Scrum Info Hub</h2>
-    <form onsubmit="login(event)">
-      <label>Email:</label>
-      <input required name="email" type="email" placeholder="Seu email" style="width:100%"/>
-      <label>Senha:</label>
-      <input required name="password" type="password" placeholder="Senha" style="width:100%"/>
-      <br>
-      <button class="btn" style="width:100%;margin-top:11px;font-size:1.18rem">Entrar</button>
-    </form>
-    <div style="margin:21px 0 3px 0;text-align:center">
-      <span>Ainda não tem cadastro? 
-        <a href="#" onclick="gotoRegister()">Registrar-se</a>
-      </span>
-    </div>
-  </div>`;
-}
-
-function renderRegisterForm() {
-  return `<div style="max-width:460px;margin:50px auto;background:#eef3fa;padding:30px 26px;border-radius:14px;box-shadow:0 8px 38px #2463eb13;">
-    <h2 style="margin-bottom:22px;color:#2563eb"><i class="fa fa-cube"></i> Criar Conta</h2>
-    <form onsubmit="register(event)">
-      <label>Nome:</label>
-      <input required name="name" type="text" placeholder="Seu nome" style="width:100%"/>
-      <label>Email:</label>
-      <input required name="email" type="email" placeholder="Seu email" style="width:100%"/>
-      <label>Senha:</label>
-      <input required name="password" type="password" placeholder="Senha mínima de 6 caracteres" minlength="6" style="width:100%"/>
-      <label>Cargo:</label>
-      <select name="role" required onchange="handleRoleChange(this.value)">
-        <option value="">Selecione...</option>
-        ${ROLES.map(r => `<option value="${r}">${r}</option>`).join("")}
-      </select>
-      <div id="tech-lead-div" style="display:none;margin:7px 0;">
-        <label><input type="checkbox" id="techLeadBox"/> Tech Lead deste time</label>
-      </div>
-      <label>Chave de acesso:</label>
-      <input required name="key" type="text" placeholder="Chave fornecida pelo admin" style="width:100%"/>
-      <br>
-      <button class="btn" style="width:100%;margin-top:11px;font-size:1.13rem">Registrar-se</button>
-      <div style="margin:13px 0 2px 0;text-align:center">
-        <span>Já tem conta? <a href="#" onclick="gotoLogin()">Entrar</a></span>
-      </div>
-      ${state.errorRegister ? `<div style="color:red;text-align:center">${escapeHtml(state.errorRegister)}</div>` : ""}
-    </form>
-  </div>`;
-}
-window.gotoRegister = function () {state.showLogin = false; renderApp();}
-window.gotoLogin = function () {state.showLogin = true; renderApp();}
-window.handleRoleChange = function(role) {
-  const techDiv = document.getElementById("tech-lead-div");
-  const anyTL = state.profiles.some(x=>x.role==="Desenvolvedor"&&x.is_tech_lead);
-  if (!techDiv) return;
-  if (role === "Desenvolvedor" && !anyTL) {
-    techDiv.style.display = "block";
-  } else techDiv.style.display = "none";
-};
-
-// ==== AUTENTICAÇÃO ====
-// LOGIN
-window.login = async function(ev) {
-  ev.preventDefault();
-  state.loading=true; renderApp();
-  const f = ev.target;
-  const email = (f.email.value||"").toLowerCase().trim();
-  const password = f.password.value;
-  let {data,error} = await supabase.auth.signInWithPassword({email,password});
-  if(error) {
-    state.loading=false;
-    alert("Usuário/senha inválidos!");
-    return;
-  }
-  await loadMeAndProfiles();
-  state.loading=false;
-  await fetchArtefactsFromSupabase();
-  setupArtefactsRealtime();
-};
-// LOGOUT
-window.logout = async function() {
-  await supabase.auth.signOut();
-  state.user = null;
-  renderApp();
-  if (artefactsRealtimeSub) artefactsRealtimeSub.unsubscribe();
-};
-// REGISTER
-window.register = async function(ev){
-  ev.preventDefault();
-  const f = ev.target;
-  const name = f.name.value.trim();
-  const email = f.email.value.toLowerCase().trim();
-  const password = f.password.value;
-  const role = f.role.value;
-  const isTechLead = !!f.querySelector('#techLeadBox')?.checked;
-  const key = f.key.value.trim();
-  if (key!=="97990191") { state.errorRegister="Chave de acesso incorreta"; renderApp(); return; }
-  if (!/\S+@\S+\.\S+/.test(email)) { state.errorRegister="Email inválido"; renderApp(); return; }
-  if (state.profiles.some(p=>p.role==="Desenvolvedor" && p.is_tech_lead) && isTechLead) {
-    state.errorRegister="Só pode ter um Tech Lead";
-    renderApp(); return;
-  }
-  state.errorRegister=""; state.loading=true; renderApp();
-  let {data,error} = await supabase.auth.signUp({email,password});
-  if(error){
-    state.errorRegister = "Erro: " + (error.message||"cadastro auth");
-    state.loading=false; renderApp(); return;
-  }
-  let userId = data.user.id;
-  await supabase.from('profiles').insert([
-      { id: userId, name, role, is_tech_lead: isTechLead }
-  ]);
-  alert("Registro criado! Confirme seu email e depois faça o login.");
-  state.showLogin=true; state.loading=false; renderApp();
-};
-
-// ==== CRUD / ARTEFATOS ====
-// Novo/editar artefato
-window.createArtefact = async function(ev) {
-  ev.preventDefault();
-  const form = ev.target;
-  const title = form.title.value.trim();
-  const responsibles = state.tempResponsaveis.map(uid => {
-    const p = state.profiles.find(u => u.id === uid);
-    return p ? { id: p.id, name: p.name, role: p.role } : null;
-  }).filter(Boolean);
-  const responsibleJustif = form.responsibleJustif.value.trim();
-  const sprint = form.sprint.value;
-  const tool = form.tool.value.trim();
-  const toolJustif = form.toolJustif.value.trim();
-  const description = form.description.value;
-  const dateVal = form.datareg.value;
-  const fileLink = form.fileLink.value.trim();
-  let dtFinal = dateVal ? new Date(`${dateVal}T00:00:00`) : new Date();
-  if (!responsibles.length) return alert("Selecione pelo menos um responsável.");
-  if (state.editingArtefact) {
-    const id = state.editingArtefact.id;
-    await updateArtefactOnSupabase(id, {
-      title,responsibles,responsibleJustif,sprint,tool,toolJustif,description,
-      created_at: dtFinal,fileLink
-    });
-    state.editingArtefact = null;
-  } else {
-    await createArtefactOnSupabase({
-      title,responsibles,responsibleJustif,sprint,tool,toolJustif,description,
-      createdAt: dtFinal,
-      status: "todo",
-      pct: 0,
-      fileLink
-    });
-  }
-  state.showNewArtefact = false;
-  state.tempResponsaveis = [];
-  state.dropdownResponsaveis = false;
-  await fetchArtefactsFromSupabase();
-  renderApp();
-};
-// Dropdown responsáveis helper
-window.toggleDropdownResp=function(){ state.dropdownResponsaveis=!state.dropdownResponsaveis; renderApp();}
-window.toggleRespOption = function(cb) {
-  const id = cb.value;
-  if (cb.checked && !state.tempResponsaveis.includes(id)) state.tempResponsaveis.push(id);
-  if (!cb.checked && state.tempResponsaveis.includes(id)) state.tempResponsaveis = state.tempResponsaveis.filter(x=>x!==id);
-  renderApp();
-};
-window.showNewArtefactForm = async function() {
-  state.loading = true;
-  renderApp();
-  await loadMeAndProfiles();
-  state.showNewArtefact = true;
-  state.editingArtefact = null;
-  state.tempResponsaveis = [];
-  state.dropdownResponsaveis = false;
-  state.loading = false;
-  renderApp();
-};
-window.closeNewArtefactForm = function(e) {
-  if (e && e.target!==e.currentTarget) return;
-  state.showNewArtefact = false;
-  state.editingArtefact = null;
-  state.tempResponsaveis = [];
-  state.dropdownResponsaveis = false;
-  renderApp();
-};
-window.editArtefact = async function(id) {
-  state.loading = true; renderApp();
-  await loadMeAndProfiles();
-  const art = state.artefacts.find(a => a.id === id);
-  if (!art) { state.loading = false; renderApp(); return; }
-  state.editingArtefact = {...art};
-  state.tempResponsaveis = (art.responsibles||[]).map(r=>r.id);
-  state.showNewArtefact = true;
-  state.loading = false;
-  renderApp();
-};
-window.editArtefactFromModal = function(id) {
-  state.showModal = false;
-  setTimeout(function () { window.editArtefact(id); }, 70);
-};
-window.deleteArtefact = async function(id) {
-  if (!confirm("Tem certeza que deseja excluir este artefato?")) return;
-  await deleteArtefactOnSupabase(id);
-  state.showModal = false;
-  state.showNewArtefact = false;
-  state.editingArtefact = null;
-  await fetchArtefactsFromSupabase();
-  renderApp();
-};
-window.dragTask = function(e, id) {
-  e.dataTransfer.setData("text", id);
-  setTimeout(() => e.target.classList.add("dragging"), 1);
-};
-window.allowDrop = function(e) { e.preventDefault(); }
-window.dropTask = async function(e, status) {
-  e.preventDefault();
-  const id = e.dataTransfer.getData("text");
-  const task = state.artefacts.find(a => a.id === id);
-  if (task && ["todo", "progress", "done"].includes(status)) {
-    await updateArtefactOnSupabase(id, { status, pct: status !== "progress" ? 0 : (task.pct || 0) });
-    await fetchArtefactsFromSupabase();
-  }
-};
-window.updatePct = async function(id, val) {
-  const task = state.artefacts.find(a => a.id === id);
-  if (!task) return;
-  const pct = Math.min(100, Math.max(0, parseInt(val, 10) || 0));
-  await updateArtefactOnSupabase(id, { pct });
-  await fetchArtefactsFromSupabase();
+// ==== NOVO: Handler para atualizar o estado do form ====
+window.handleArtefactFormInput = function(field, value) {
+  if (!state.tempArtefactForm) state.tempArtefactForm = {};
+  state.tempArtefactForm[field] = value;
 };
 
 // ==== MODAL DETALHE ====
@@ -657,8 +401,8 @@ function renderSearchResults() {
   if (users.length){
     html += `<div><b>Usuários encontrados:</b><br>`;
     users.forEach(u=>{
-      html += `<div class="card-resp">${getAvatar(u.name)}${escapeHtml(u.name)} — ${escapeHtml(u.role)}${u.is_tech_lead ? " (Tech Lead)":""}
-        <br><i>Artefatos:</i> ${state.artefacts.filter(a=>(a.responsibles||[]).some(r=>r.id===u.id)).map(a=>`<a href="#" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</a>`).join(", ")||"[Nenhum]"}</div><hr>`;
+      html += `<div class="card-resp">${getAvatar(u.name)}${escapeHtml(u.name)} — ${escapeHtml(u.role)}${u.is_tech_lead ? " (Tech Lead)":""
+        }<br><i>Artefatos:</i> ${state.artefacts.filter(a=>(a.responsibles||[]).some(r=>r.id===u.id)).map(a=>`<a href="#" onclick="openArtefactModal('${a.id}')">${escapeHtml(a.title)}</a>`).join(", ")||"[Nenhum]"}</div><hr>`;
     });
     html += `</div>`;
   }
@@ -683,6 +427,218 @@ function renderSearchResults() {
   html += `</div>`;
   return html;
 }
+
+// ==== NOVO Artefato/Editar Form: zera ou pré-carrega o estado do form ====
+
+// Novo artefato
+window.showNewArtefactForm = async function() {
+  state.loading = true;
+  renderApp();
+  await loadMeAndProfiles();
+  state.showNewArtefact = true;
+  state.editingArtefact = null;
+
+  state.tempArtefactForm = {
+    title: "",
+    responsibleJustif: "",
+    sprint: SPRINTS[state.sprintIndex],
+    tool: "",
+    toolJustif: "",
+    description: "",
+    datareg: new Date().toISOString().slice(0,10),
+    fileLink: ""
+  };
+
+  state.tempResponsaveis = [];
+  state.dropdownResponsaveis = false;
+  state.loading = false;
+  renderApp();
+};
+// Fechar form
+window.closeNewArtefactForm = function(e) {
+  if (e && e.target!==e.currentTarget) return;
+  state.showNewArtefact = false;
+  state.editingArtefact = null;
+  state.tempResponsaveis = [];
+  state.dropdownResponsaveis = false;
+  state.tempArtefactForm = null;
+  renderApp();
+};
+// Editar artefato
+window.editArtefact = async function(id) {
+  state.loading = true; renderApp();
+  await loadMeAndProfiles();
+  const art = state.artefacts.find(a => a.id === id);
+  if (!art) { state.loading = false; renderApp(); return; }
+  state.editingArtefact = {...art};
+  state.tempArtefactForm = {
+    title: art.title || "",
+    responsibleJustif: art.responsibleJustif || "",
+    sprint: art.sprint || SPRINTS[state.sprintIndex],
+    tool: art.tool || "",
+    toolJustif: art.toolJustif || "",
+    description: art.description || "",
+    datareg: art.createdAt ? new Date(art.createdAt).toISOString().slice(0,10) : new Date().toISOString().slice(0,10),
+    fileLink: art.fileLink || ""
+  };
+  state.tempResponsaveis = (art.responsibles||[]).map(r=>r.id);
+  state.showNewArtefact = true;
+  state.loading = false;
+  renderApp();
+};
+window.editArtefactFromModal = function(id) {
+  state.showModal = false;
+  setTimeout(function () { window.editArtefact(id); }, 70);
+};
+window.deleteArtefact = async function(id) {
+  if (!confirm("Tem certeza que deseja excluir este artefato?")) return;
+  await deleteArtefactOnSupabase(id);
+  state.showModal = false;
+  state.showNewArtefact = false;
+  state.editingArtefact = null;
+  await fetchArtefactsFromSupabase();
+  renderApp();
+};
+window.dragTask = function(e, id) {
+  e.dataTransfer.setData("text", id);
+  setTimeout(() => e.target.classList.add("dragging"), 1);
+};
+window.allowDrop = function(e) { e.preventDefault(); }
+window.dropTask = async function(e, status) {
+  e.preventDefault();
+  const id = e.dataTransfer.getData("text");
+  const task = state.artefacts.find(a => a.id === id);
+  if (task && ["todo", "progress", "done"].includes(status)) {
+    await updateArtefactOnSupabase(id, { status, pct: status !== "progress" ? 0 : (task.pct || 0) });
+    await fetchArtefactsFromSupabase();
+  }
+};
+window.updatePct = async function(id, val) {
+  const task = state.artefacts.find(a => a.id === id);
+  if (!task) return;
+  const pct = Math.min(100, Math.max(0, parseInt(val, 10) || 0));
+  await updateArtefactOnSupabase(id, { pct });
+  await fetchArtefactsFromSupabase();
+};
+
+// ==== Dropdown responsáveis helper ====
+window.toggleDropdownResp=function(){ state.dropdownResponsaveis=!state.dropdownResponsaveis; renderApp();}
+window.toggleRespOption = function(cb) {
+  const id = cb.value;
+  if (cb.checked && !state.tempResponsaveis.includes(id)) state.tempResponsaveis.push(id);
+  if (!cb.checked && state.tempResponsaveis.includes(id)) state.tempResponsaveis = state.tempResponsaveis.filter(x=>x!==id);
+  renderApp();
+};
+
+// ==== AUTENTICAÇÃO ====
+// LOGIN
+window.login = async function(ev) {
+  ev.preventDefault();
+  state.loading=true; renderApp();
+  const f = ev.target;
+  const email = (f.email.value||"").toLowerCase().trim();
+  const password = f.password.value;
+  let {data,error} = await supabase.auth.signInWithPassword({email,password});
+  if(error) {
+    state.loading=false;
+    alert("Usuário/senha inválidos!");
+    return;
+  }
+  await loadMeAndProfiles();
+  state.loading=false;
+  await fetchArtefactsFromSupabase();
+  setupArtefactsRealtime();
+};
+// LOGOUT
+window.logout = async function() {
+  await supabase.auth.signOut();
+  state.user = null;
+  renderApp();
+  if (artefactsRealtimeSub) artefactsRealtimeSub.unsubscribe();
+};
+// REGISTER
+window.register = async function(ev){
+  ev.preventDefault();
+  const f = ev.target;
+  const name = f.name.value.trim();
+  const email = f.email.value.toLowerCase().trim();
+  const password = f.password.value;
+  const role = f.role.value;
+  const isTechLead = !!f.querySelector('#techLeadBox')?.checked;
+  const key = f.key.value.trim();
+  if (key!=="97990191") { state.errorRegister="Chave de acesso incorreta"; renderApp(); return; }
+  if (!/\S+@\S+\.\S+/.test(email)) { state.errorRegister="Email inválido"; renderApp(); return; }
+  if (state.profiles.some(p=>p.role==="Desenvolvedor" && p.is_tech_lead) && isTechLead) {
+    state.errorRegister="Só pode ter um Tech Lead";
+    renderApp(); return;
+  }
+  state.errorRegister=""; state.loading=true; renderApp();
+  let {data,error} = await supabase.auth.signUp({email,password});
+  if(error){
+    state.errorRegister = "Erro: " + (error.message||"cadastro auth");
+    state.loading=false; renderApp(); return;
+  }
+  let userId = data.user.id;
+  await supabase.from('profiles').insert([
+      { id: userId, name, role, is_tech_lead: isTechLead }
+  ]);
+  alert("Registro criado! Confirme seu email e depois faça o login.");
+  state.showLogin=true; state.loading=false; renderApp();
+};
+
+window.gotoRegister = function () {state.showLogin = false; renderApp();}
+window.gotoLogin = function () {state.showLogin = true; renderApp();}
+window.handleRoleChange = function(role) {
+  const techDiv = document.getElementById("tech-lead-div");
+  const anyTL = state.profiles.some(x=>x.role==="Desenvolvedor"&&x.is_tech_lead);
+  if (!techDiv) return;
+  if (role === "Desenvolvedor" && !anyTL) {
+    techDiv.style.display = "block";
+  } else techDiv.style.display = "none";
+};
+
+// ==== CRUD / ARTEFATOS ====
+// Novo/editar artefato: Use agora o state.tempArtefactForm!
+window.createArtefact = async function(ev) {
+  ev.preventDefault();
+  const d = state.tempArtefactForm || {};
+  const title = (d.title||"").trim();
+  const responsibles = state.tempResponsaveis.map(uid => {
+    const p = state.profiles.find(u => u.id === uid);
+    return p ? { id: p.id, name: p.name, role: p.role } : null;
+  }).filter(Boolean);
+  const responsibleJustif = (d.responsibleJustif||"").trim();
+  const sprint = d.sprint || SPRINTS[state.sprintIndex];
+  const tool = (d.tool||"").trim();
+  const toolJustif = (d.toolJustif||"").trim();
+  const description = d.description||"";
+  const dateVal = d.datareg;
+  const fileLink = (d.fileLink||"").trim();
+  let dtFinal = dateVal ? new Date(`${dateVal}T00:00:00`) : new Date();
+  if (!responsibles.length) return alert("Selecione pelo menos um responsável.");
+  if (state.editingArtefact) {
+    const id = state.editingArtefact.id;
+    await updateArtefactOnSupabase(id, {
+      title,responsibles,responsibleJustif,sprint,tool,toolJustif,description,
+      created_at: dtFinal,fileLink
+    });
+    state.editingArtefact = null;
+  } else {
+    await createArtefactOnSupabase({
+      title,responsibles,responsibleJustif,sprint,tool,toolJustif,description,
+      createdAt: dtFinal,
+      status: "todo",
+      pct: 0,
+      fileLink
+    });
+  }
+  state.showNewArtefact = false;
+  state.tempArtefactForm = null; // Limpa!
+  state.tempResponsaveis = [];
+  state.dropdownResponsaveis = false;
+  await fetchArtefactsFromSupabase();
+  renderApp();
+};
 
 // ==== Inicialização ====
 async function boot() {
