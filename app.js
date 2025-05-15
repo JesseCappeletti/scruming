@@ -345,6 +345,33 @@ window.closeModal = function (e) {
   renderApp();
 };
 
+// ==== Nova Função ====
+function renderArtefactModal(artefact) {
+  if (!artefact) return ""; // Segurança
+
+  return `
+    <div class="modal-bg" onclick="closeModal(event)">
+      <div class="modal-content" tabindex="0" onclick="event.stopPropagation();" style="width:65%;max-width:700px;margin:0 auto;">
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <div class="modal-header">
+          <b>Detalhes do Artefato</b>
+        </div>
+        <div class="modal-body">
+            <h2>${escapeHtml(artefact.title || "")}</h2>
+            <div><b>Sprint:</b> ${escapeHtml(artefact.sprint || "")}</div>
+            <div><b>Responsáveis:</b> ${(artefact.responsibles||[]).map(r=>escapeHtml(r.name)).join(", ")}</div>
+            <div><b>Descrição:</b> <br> ${escapeHtml(artefact.description || "")}</div>
+            ${artefact.fileLink ? `<div><b>Arquivo:</b> <a href="${escapeHtml(artefact.fileLink)}" target="_blank">${escapeHtml(artefact.fileLink)}</a></div>` : ""}
+        </div>
+        <div class="modal-footer" style="text-align:right;">
+            <button class="card-link-btn" style="background:#f9ba3399" onclick="editArtefactFromModal('${artefact.id}')"><i class="fa fa-edit"></i> Editar</button>
+            <button class="card-link-btn" style="background:#ffacb199" onclick="deleteArtefact('${artefact.id}')"><i class="fa fa-trash"></i> Excluir</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // ==== FAVORITOS ====
 window.toggleFavorite = function (id) {
   if (!state.favorites) state.favorites = [];
