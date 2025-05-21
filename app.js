@@ -433,18 +433,18 @@ function renderArtefactModal(artefact) {
         </div>
         <div class="document-section">
           <strong>Justificativa dos responsáveis:</strong><br>
-          ${formatTextarea(artefact.responsibleJustif || "<i>Não informada</i>")}
+          ${artefact.responsibleJustif ? formatTextarea(artefact.responsibleJustif) : "<i>Não informada</i>"}
         </div>
         <div class="document-section">
-          <strong>Ferramenta:</strong> ${escapeHtml(artefact.tool || "<i>Não informada</i>")}
+          <strong>Ferramenta:</strong> ${artefact.tool ? escapeHtml(artefact.tool) : "<i>Não informada</i>"}
         </div>
         <div class="document-section">
           <strong>Justificativa da ferramenta:</strong><br>
-          ${formatTextarea(artefact.toolJustif || "<i>Não informada</i>")}
+          ${artefact.toolJustif ? formatTextarea(artefact.toolJustif) : "<i>Não informada</i>"}
         </div>
         <div class="document-section">
           <strong>Descrição:</strong><br>
-          ${formatTextarea(artefact.description || "<i>Não informada</i>")}
+          ${artefact.description ? formatTextarea(artefact.description) : "<i>Não informada</i>"}
         </div>
         ${artefact.fileLink ? `
         <div class="document-section">
