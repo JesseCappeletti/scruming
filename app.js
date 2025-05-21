@@ -36,6 +36,10 @@ function escapeHtml(str) {
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
+function formatTextarea(str) {
+  if (!str) return "";
+  return escapeHtml(str).replace(/\n/g, "<br>");
+}
 function formatDate(dt) {
   if (!dt) return "";
   const d = new Date(dt);
@@ -429,18 +433,18 @@ function renderArtefactModal(artefact) {
         </div>
         <div class="document-section">
           <strong>Justificativa dos responsáveis:</strong><br>
-          ${escapeHtml(artefact.responsibleJustif || "<i>Não informada</i>")}
+          ${formatTextarea(artefact.responsibleJustif || "<i>Não informada</i>")}
         </div>
         <div class="document-section">
           <strong>Ferramenta:</strong> ${escapeHtml(artefact.tool || "<i>Não informada</i>")}
         </div>
         <div class="document-section">
           <strong>Justificativa da ferramenta:</strong><br>
-          ${escapeHtml(artefact.toolJustif || "<i>Não informada</i>")}
+          ${formatTextarea(artefact.toolJustif || "<i>Não informada</i>")}
         </div>
         <div class="document-section">
           <strong>Descrição:</strong><br>
-          ${escapeHtml(artefact.description || "<i>Não informada</i>")}
+          ${formatTextarea(artefact.description || "<i>Não informada</i>")}
         </div>
         ${artefact.fileLink ? `
         <div class="document-section">
