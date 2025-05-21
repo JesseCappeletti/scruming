@@ -26,9 +26,11 @@ window.state = {
   errorRegister: ""
 };
 window._mouseDownInsideModal = false;
+window._mouseDownOnModalBg = false;
 
 document.addEventListener('mousedown', function(e) {
   window._mouseDownInsideModal = !!(e.target.closest('.document-modal, .modal-content'));
+  window._mouseDownOnModalBg = !!(e.target.classList && e.target.classList.contains('modal-bg'));
 });
 
 // ==== UTILITÁRIOS ====
@@ -419,22 +421,27 @@ window.modalBgClick = function(e) {
   if (
     e && e.target === e.currentTarget &&
     e.type === "click" &&
+    window._mouseDownOnModalBg && // só fecha se mousedown foi no fundo!
     !window._mouseDownInsideModal &&
     !window.getSelection().toString()
   ) {
     closeModal();
   }
+  window._mouseDownOnModalBg = false;
   window._mouseDownInsideModal = false;
 };
+
 window.modalBgClickArtefactForm = function(e) {
   if (
     e && e.target === e.currentTarget &&
     e.type === "click" &&
+    window._mouseDownOnModalBg && // só fecha se mousedown foi no fundo!
     !window._mouseDownInsideModal &&
     !window.getSelection().toString()
   ) {
     closeNewArtefactForm();
   }
+  window._mouseDownOnModalBg = false;
   window._mouseDownInsideModal = false;
 };
 
