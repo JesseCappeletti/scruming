@@ -28,7 +28,7 @@ window.state = {
 window._mouseDownInsideModal = false;
 
 document.addEventListener('mousedown', function(e) {
-  window._mouseDownInsideModal = !!e.target.closest('.document-modal');
+  window._mouseDownInsideModal = !!(e.target.closest('.document-modal, .modal-content'));
 });
 
 // ==== UTILITÁRIOS ====
