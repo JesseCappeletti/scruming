@@ -410,13 +410,20 @@ window.closeModal = function (e) {
   state.modalArtefact = null;
   renderApp();
 };
+window.modalBgClick = function(e) {
+  // Só fecha se foi um clique simples (sem drag, sem botão diferente do esquerdo, sem seleção)
+  if (e && e.target === e.currentTarget && e.type === "click" && !window.getSelection().toString()) {
+    closeModal();
+  }
+};
+
 
 // ==== Nova Função ====
 function renderArtefactModal(artefact) {
   if (!artefact) return ""; // Segurança
 
   return `
-    <div class="modal-bg" onclick="closeModal(event)">
+    <div class="modal-bg" onclick="modalBgClick(event)">
       <div class="document-modal" tabindex="0" onclick="event.stopPropagation();">
         <button class="modal-close" onclick="closeModal()">&times;</button>
         <div class="modal-header">
