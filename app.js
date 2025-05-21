@@ -413,26 +413,49 @@ function renderArtefactModal(artefact) {
 
   return `
     <div class="modal-bg" onclick="closeModal(event)">
-      <div class="modal-content" tabindex="0" onclick="event.stopPropagation();" style="width:65%;max-width:700px;margin:0 auto;">
+      <div class="document-modal" tabindex="0" onclick="event.stopPropagation();">
         <button class="modal-close" onclick="closeModal()">&times;</button>
         <div class="modal-header">
-          <b>Detalhes do Artefato</b>
+          <h2>Detalhes do Artefato</h2>
         </div>
-        <div class="modal-body">
-            <h2>${escapeHtml(artefact.title || "")}</h2>
-            <div><b>Sprint:</b> ${escapeHtml(artefact.sprint || "")}</div>
-            <div><b>Responsáveis:</b> ${(artefact.responsibles||[]).map(r=>escapeHtml(r.name)).join(", ")}</div>
-            <div><b>Descrição:</b> <br> ${escapeHtml(artefact.description || "")}</div>
-            ${artefact.fileLink ? `<div><b>Arquivo:</b> <a href="${escapeHtml(artefact.fileLink)}" target="_blank">${escapeHtml(artefact.fileLink)}</a></div>` : ""}
+        <div class="document-section">
+          <strong>Título:</strong> <span style="font-size:1.25em;color:#174883;font-weight:bold;">${escapeHtml(artefact.title || "")}</span>
         </div>
-        <div class="modal-footer" style="text-align:right;">
-            <button class="card-link-btn" style="background:#f9ba3399" onclick="editArtefactFromModal('${artefact.id}')"><i class="fa fa-edit"></i> Editar</button>
-            <button class="card-link-btn" style="background:#ffacb199" onclick="deleteArtefact('${artefact.id}')"><i class="fa fa-trash"></i> Excluir</button>
+        <div class="document-section">
+          <strong>Sprint:</strong> ${escapeHtml(artefact.sprint || "")}
+        </div>
+        <div class="document-section">
+          <strong>Responsáveis:</strong> ${(artefact.responsibles||[]).map(r=>escapeHtml(r.name)).join(", ")}
+        </div>
+        <div class="document-section">
+          <strong>Justificativa dos responsáveis:</strong><br>
+          ${escapeHtml(artefact.responsibleJustif || "<i>Não informada</i>")}
+        </div>
+        <div class="document-section">
+          <strong>Ferramenta:</strong> ${escapeHtml(artefact.tool || "<i>Não informada</i>")}
+        </div>
+        <div class="document-section">
+          <strong>Justificativa da ferramenta:</strong><br>
+          ${escapeHtml(artefact.toolJustif || "<i>Não informada</i>")}
+        </div>
+        <div class="document-section">
+          <strong>Descrição:</strong><br>
+          ${escapeHtml(artefact.description || "<i>Não informada</i>")}
+        </div>
+        ${artefact.fileLink ? `
+        <div class="document-section">
+          <strong>Arquivo:</strong> <a href="${escapeHtml(artefact.fileLink)}" target="_blank">${escapeHtml(artefact.fileLink)}</a>
+        </div>
+        ` : ""}
+        <div class="document-section" style="text-align:right; border-bottom:none; margin-top:30px;">
+          <button class="card-link-btn" style="background:#f9ba3399" onclick="editArtefactFromModal('${artefact.id}')"><i class="fa fa-edit"></i> Editar</button>
+          <button class="card-link-btn" style="background:#ffacb199" onclick="deleteArtefact('${artefact.id}')"><i class="fa fa-trash"></i> Excluir</button>
         </div>
       </div>
     </div>
   `;
 }
+
 
 // ==== FAVORITOS ====
 window.toggleFavorite = function (id) {
