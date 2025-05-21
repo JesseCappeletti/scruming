@@ -354,7 +354,7 @@ function renderArtefactForm() {
   let dt = formData.datareg ? new Date(formData.datareg) : new Date();
   let dataVal = dt.toISOString().slice(0, 10);
 
-  return `<div class="modal-bg" onclick="closeNewArtefactForm(event)">
+  return `<div class="modal-bg" onclick="modalBgClickArtefactForm(event)">
    <div class="modal-content" tabindex="0" onclick="event.stopPropagation();" style="width:80%;max-width:900px;margin:0 auto;">
       <button class="modal-close" onclick="closeNewArtefactForm()">&times;</button>
       <div class="modal-header"><b>${editing ? "Editar Artefato / Tarefa" : "Novo Artefato / Tarefa"}</b></div>
@@ -423,6 +423,17 @@ window.modalBgClick = function(e) {
     !window.getSelection().toString()
   ) {
     closeModal();
+  }
+  window._mouseDownInsideModal = false;
+};
+window.modalBgClickArtefactForm = function(e) {
+  if (
+    e && e.target === e.currentTarget &&
+    e.type === "click" &&
+    !window._mouseDownInsideModal &&
+    !window.getSelection().toString()
+  ) {
+    closeNewArtefactForm();
   }
   window._mouseDownInsideModal = false;
 };
