@@ -25,6 +25,11 @@ window.state = {
   booting: true,
   errorRegister: ""
 };
+window._mouseDownInsideModal = false;
+
+document.addEventListener('mousedown', function(e) {
+  window._mouseDownInsideModal = !!e.target.closest('.document-modal');
+});
 
 // ==== UTILITÁRIOS ====
 function getAvatar(name) {
@@ -411,10 +416,15 @@ window.closeModal = function (e) {
   renderApp();
 };
 window.modalBgClick = function(e) {
-  // Só fecha se foi um clique simples (sem drag, sem botão diferente do esquerdo, sem seleção)
-  if (e && e.target === e.currentTarget && e.type === "click" && !window.getSelection().toString()) {
+  if (
+    e && e.target === e.currentTarget &&
+    e.type === "click" &&
+    !window._mouseDownInsideModal &&
+    !window.getSelection().toString()
+  ) {
     closeModal();
   }
+  window._mouseDownInsideModal = false;
 };
 
 
